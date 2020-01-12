@@ -27,6 +27,9 @@
 #include "cocos2d.h"
 #include "BaseScene.h"
 
+#include "3rdparty/clipper/clipper.hpp"
+#include "3rdparty/poly2tri/poly2tri.h"
+
 class TestPoly2tri : public BaseScene
 {
 public:
@@ -43,16 +46,17 @@ public:
     void updateDebugText();
     void executeClipper();
     void reDrawConvexs(int type);
+    std::vector<cocos2d::Vec2> triangulate(ClipperLib::PolyNode*);
 
     // implement the "static create()" method manually
     CREATE_FUNC(TestPoly2tri);
 
 private:
-    std::vector<std::size_t> triangles_;
-    std::vector<double> coords_;
+    // std::vector<std::size_t> triangles_;
+    // std::vector<double> coords_;
     std::vector<cocos2d::Vec2> pts_;
     std::vector<cocos2d::Vec2> hull_;
-    std::list<std::vector<cocos2d::Vec2>> poly_list_;
+    // std::list<std::vector<cocos2d::Vec2>> poly_list_;
     cocos2d::Vec2 prev_touch_;
     cocos2d::Color4F colors_[3];
 

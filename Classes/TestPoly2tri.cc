@@ -28,11 +28,14 @@
 #include "TestPoly2tri.h"
 #include "SimpleAudioEngine.h"
 #include "3rdparty/clipper/clipper.hpp"
+#include "3rdparty/poly2tri/poly2tri.h"
 #include "convex.h"
 #include "ui/UIRadioButton.h"
 #include "ui/UILayout.h"
 
 USING_NS_CC;
+
+static const float kPrecision = 100.f;
 
 static void drawConvexs(cocos2d::DrawNode *draw, std::list<std::vector<cocos2d::Vec2>> polys, cocos2d::Color4F const &color, float rate=0.1f)
 {
@@ -86,10 +89,13 @@ bool TestPoly2tri::init()
     colors_[1] = cocos2d::Color4F::RED;
     colors_[2] = cocos2d::Color4F::GREEN;
 
-    poly_type_ = 0;
+    poly_type_ = 1;
     poly_fill_type_ = 0;
-    clip_type_ = 0;
+    clip_type_ = 2;
     ctrl_ = false;
+
+    clip_paths_[0].push_back({{0, 0}, {kVisible.width, 0}, {kVisible.width, kVisible.height}, {0, kVisible.height}});
+    reDrawConvexs(0);
 
     // /// help layer
     // help_layer_ = cocos2d::Layer::create();
@@ -353,7 +359,7 @@ void TestPoly2tri::doJob()
 {
     cocos2d::Size const kVisible = cocos2d::Director::getInstance()->getVisibleSize();
     // draw_delau_tri_->clear();
-    if(!poly_list_.size()) return;
+    // if(!poly_list_.size()) return;
     // ClipperLib::Clipper c;
     // ClipperLib::Paths sub(1), clp(1), sol;
 
@@ -492,7 +498,6 @@ void TestPoly2tri::executeClipper()
     // ClipperLib::Clipper c;
     ClipperLib::Paths sub, clp, sol;
     ClipperLib::PolyTree sol_tree;
-    const float kPrecision = 10.f;
     /// subject
     for(auto &ps : clip_paths_[0])
     {
@@ -529,19 +534,22 @@ void TestPoly2tri::executeClipper()
 
     draw_convex_s_[2]->clear();
     // for(ClipperLib::Path &ps : sol)
-    for(;p2!=nullptr;p2=p2->GetNext())
-    {
-        if(p2->IsHole())
-            continue;
+    // for(;p2!=nullptr;p2=p2->GetNext())
+    // {
+    //     if(p2->IsHole())
+    //         continue;
 
-        std::vector<cocos2d::Vec2> poly;
-        for(ClipperLib::IntPoint &p : p2->Contour)
-        {
-            poly.push_back({p.X/kPrecision, p.Y/kPrecision});
-        }
+        
+        std::vector<cocos2d::Vec2> tris = triangulate(p2);
+        // for(ClipperLib::IntPoint &p : p2->Contour)
+        // {
+        //     // poly.push_back({p.X/kPrecision, p.Y/kPrecision});
+        // }
+        for(int i=0; i<tris.size(); i+=3)
+            draw_convex_s_[2]->drawTriangle(tris[i], tris[i+1], tris[i+2],Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
 
-        drawConvexs(draw_convex_s_[2], {poly}, cocos2d::Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 1), 1);
-    }
+        // drawConvexs(draw_convex_s_[2], {poly}, cocos2d::Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 1), 1);
+    // }
 }
 
 void TestPoly2tri::reDrawConvexs(int type)
@@ -549,4 +557,69 @@ void TestPoly2tri::reDrawConvexs(int type)
     draw_convex_s_[type]->clear();
     drawConvexs(draw_convex_s_[type], clip_paths_[type], colors_[type]);
 
+}
+
+std::vector<cocos2d::Vec2> TestPoly2tri::triangulate(ClipperLib::PolyNode *pln)
+{
+    std::vector<cocos2d::Vec2> ret;
+    std::vector<p2t::Point*> poly;
+    std::vector<std::vector<p2t::Point*>> holes;
+    std::allocator<p2t::Point> a;
+
+    {
+        auto contour = pln->Contour;
+        poly.reserve(contour.size());
+        p2t::Point *pts = (p2t::Point *)a.allocate(contour.size());
+        auto temp_pts = pts;
+        for(auto &p : contour)
+        {
+            // poly.push_back(new (std::nothrow) p2t::Point(p.X, p.Y));
+            a.construct(temp_pts, p2t::Point(p.X/kPrecision, p.Y/kPrecision));
+            poly.push_back(temp_pts);
+            temp_pts++;
+        }
+    }
+
+    p2t::CDT cdt(poly);
+
+    /// Hole
+    for(pln=pln->GetNext(); pln!=nullptr; pln=pln->GetNext())
+    {
+        std::vector<p2t::Point*> hl;
+        auto contour = pln->Contour;
+        hl.reserve(contour.size());
+        p2t::Point *pts = (p2t::Point *)a.allocate(contour.size());
+        auto temp_pts = pts;
+        for(auto &p : contour)
+        {
+            // poly.push_back(new (std::nothrow) p2t::Point(p.X, p.Y));
+            a.construct(temp_pts, p2t::Point(p.X/kPrecision, p.Y/kPrecision));
+            hl.push_back(temp_pts);
+            temp_pts++;
+        }
+
+        cdt.AddHole(hl);
+        holes.push_back(hl);
+    }
+
+    cdt.Triangulate();
+    std::vector<p2t::Triangle*> tris = cdt.GetTriangles();
+    ret.reserve(tris.size() * 3);
+    for(const auto& ite : tris)
+    {
+        for(int i=0; i<3; i++)
+        {
+            auto const p = ite->GetPoint(i);
+            ret.push_back({(float)p->x, (float)p->y});
+        }
+    }
+
+    a.deallocate(poly[0], poly.size());
+
+    for(auto hl : holes)
+    {
+        a.deallocate(hl[0], hl.size());
+    }
+
+    return ret;
 }
