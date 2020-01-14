@@ -498,31 +498,98 @@ void TestPoly2tri::executeClipper()
     // ClipperLib::Clipper c;
     ClipperLib::Paths sub, clp, sol;
     ClipperLib::PolyTree sol_tree;
-    /// subject
-    for(auto &ps : clip_paths_[0])
+
+    /// merge subject
+    if(clip_paths_[0].size() > 1)
     {
+        ClipperLib::Paths tmp_sub, tmp_clp;
         ClipperLib::Path path;
-        for(auto &p : ps)
+        auto iter = clip_paths_[0].begin();
+        for(auto &p : *iter)
         {
             // path.push_back({p.x, p.y});
             path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
         }
-        sub.push_back(path);
+
+        tmp_sub.push_back(path);
+        for(iter++; iter!=clip_paths_[0].end(); iter++)
+        {
+            ClipperLib::Path path;
+            for(auto &p : *iter)
+            {
+                // path.push_back({p.x, p.y});
+                path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
+            }
+
+            tmp_clp.push_back(path);
+        }
+
+        clipper.Clear();
+        clipper.AddPaths(tmp_sub, ClipperLib::PolyType::ptSubject, true);
+        clipper.AddPaths(tmp_clp, ClipperLib::PolyType::ptClip, true);
+        clipper.Execute(ClipperLib::ClipType::ctUnion, sub, (ClipperLib::PolyFillType)poly_fill_type_, (ClipperLib::PolyFillType)poly_fill_type_);
+    }
+    else
+    {
+        for(auto &ps : clip_paths_[0])
+        {
+            ClipperLib::Path path;
+            for(auto &p : ps)
+            {
+                // path.push_back({p.x, p.y});
+                path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
+            }
+
+            sub.push_back(path);
+        }
     }
 
-    /// clip
-    for(auto &ps : clip_paths_[1])
+    /// merge clip
+    if(clip_paths_[1].size() > 1)
     {
+        ClipperLib::Paths tmp_sub, tmp_clp;
         ClipperLib::Path path;
-        for(auto &p : ps)
+        auto iter = clip_paths_[1].begin();
+        for(auto &p : *iter)
         {
             // path.push_back({p.x, p.y});
             path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
         }
-        clp.push_back(path);
+
+        tmp_sub.push_back(path);
+        for(iter++; iter!=clip_paths_[1].end(); iter++)
+        {
+            ClipperLib::Path path;
+            for(auto &p : *iter)
+            {
+                // path.push_back({p.x, p.y});
+                path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
+            }
+
+            tmp_clp.push_back(path);
+        }
+
+        clipper.Clear();
+        clipper.AddPaths(tmp_sub, ClipperLib::PolyType::ptSubject, true);
+        clipper.AddPaths(tmp_clp, ClipperLib::PolyType::ptClip, true);
+        clipper.Execute(ClipperLib::ClipType::ctUnion, clp, (ClipperLib::PolyFillType)poly_fill_type_, (ClipperLib::PolyFillType)poly_fill_type_);
+    }
+    else
+    {
+        for(auto &ps : clip_paths_[1])
+        {
+            ClipperLib::Path path;
+            for(auto &p : ps)
+            {
+                // path.push_back({p.x, p.y});
+                path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
+            }
+            
+            clp.push_back(path);
+        }
     }
 
-    // clipper.Clear();
+    clipper.Clear();
     clipper.AddPaths(sub, ClipperLib::PolyType::ptSubject, true);
     clipper.AddPaths(clp, ClipperLib::PolyType::ptClip, true);
     clipper.Execute((ClipperLib::ClipType)clip_type_, sol_tree, (ClipperLib::PolyFillType)poly_fill_type_, (ClipperLib::PolyFillType)poly_fill_type_);
