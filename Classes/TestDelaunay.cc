@@ -30,9 +30,38 @@
 #include "3rdparty/delaunator.hpp"
 #include "Graph.h"
 #include "convex.h"
+#include "recast/Recast/Recast.h"
 // #include "3rdparty/clipper/clipper.hpp"
 
 USING_NS_CC;
+
+Polygon2D::Polygon2D()
+{
+
+}
+
+Polygon2D::Polygon2D(std::vector<cocos2d::Vec2> &shape)
+{
+    shape_ = std::move(shape);
+    bmin_ = shape_[0];
+    bmax_ = shape_[0];
+    for(size_t i=1; i<shape_.size(); i++)
+    {
+        if(bmin_.x > shape_[i].x) bmin_.x = shape_[i].x;
+        if(bmin_.y > shape_[i].y) bmin_.y = shape_[i].y;
+        if(bmax_.x < shape_[i].x) bmax_.x = shape_[i].x;
+        if(bmax_.y < shape_[i].y) bmax_.y = shape_[i].y;
+    }
+
+    tris_ = triangulate<cocos2d::Vec2>(shape_);
+}
+
+std::tuple<cocos2d::Vec2&, cocos2d::Vec2&, cocos2d::Vec2&> Polygon2D::triangle(size_t idx)
+{
+    size_t i = idx * 3;
+    return std::tie(shape_[tris_[i]], shape_[tris_[i+1]], shape_[tris_[i+2]]);
+}
+
 
 Scene* TestDelaunay::createScene()
 {
@@ -48,7 +77,7 @@ bool TestDelaunay::init()
     {
         return false;
     }
-
+    m_solid = nullptr;
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
@@ -59,228 +88,190 @@ bool TestDelaunay::init()
     addChild(draw_convex_, 1);
     addChild(draw_delau_tri_, 1);
 
-    // /////////////////////////////
-    // // 2. add a menu item with "X" image, which is clicked to quit the program
-    // //    you may modify it.
-
-    // // add a "close" icon to exit the progress. it's an autorelease object
-    // auto closeItem = MenuItemImage::create(
-    //                                        "CloseNormal.png",
-    //                                        "CloseSelected.png",
-    //                                        CC_CALLBACK_1(TestDelaunay::menuCloseCallback, this));
-
-    // if (closeItem == nullptr ||
-    //     closeItem->getContentSize().width <= 0 ||
-    //     closeItem->getContentSize().height <= 0)
-    // {
-    //     problemLoading("'CloseNormal.png' and 'CloseSelected.png'");
-    // }
-    // else
-    // {
-    //     float x = origin.x + visibleSize.width - closeItem->getContentSize().width/2;
-    //     float y = origin.y + closeItem->getContentSize().height/2;
-    //     closeItem->setPosition(Vec2(x,y));
-    // }
-
-    // // create menu, it's an autorelease object
-    // auto menu = Menu::create(closeItem, NULL);
-    // menu->setPosition(Vec2::ZERO);
-    // this->addChild(menu, 1);
-
-    // /////////////////////////////
-    // // 3. add your codes below...
-
-    // // add a label shokwin_size "Hello World"
-    // // create and initialize a label
-
-    // auto label = Label::createWithTTF("Hello World", "fonts/Marker Felt.ttf", 24);
-    // if (label == nullptr)
-    // {
-    //     problemLoading("'fonts/Marker Felt.ttf'");
-    // }
-    // else
-    // {
-    //     // position the label on the center of the screen
-    //     label->setPosition(Vec2(origin.x + visibleSize.width/2,
-    //                             origin.y + visibleSize.height - label->getContentSize().height));
-
-    //     // add the label as a child to this layer
-    //     this->addChild(label, 1);
-    // }
-
-    // // add "TestDelaunay" splash screen"
-    // auto sprite = Sprite::create("TestDelaunay.png");
-    // if (sprite == nullptr)
-    // {
-    //     problemLoading("'TestDelaunay.png'");
-    // }
-    // else
-    // {
-    //     // position the sprite on the center of the screen
-    //     sprite->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
-
-    //     // add the sprite as a child to this layer
-    //     this->addChild(sprite, 0);
-    // }
-
-    // Behavior *steering = Behavior::create();
-    // this->addChild(steering, 0, "behavior/steering");
-
-    // MovingEntity *movEntity;
-    // movEntity = MovingEntity::create("res/sharp_navigation_white_18dp.png");
-    // movEntity->connectSignalSteering(steering/*, &Behavior::onMessage*/);
-    // movEntity->setMovEntity(1, 500, 500, 10);
-    // this->addChild(movEntity, 0, "movE");
-    // movEntity->setPosition(static_cast<Vec2>(visibleSize/2) + origin);
-
-    // movEntity = MovingEntity::create("res/sharp_navigation_white_18dp.png");
-    // movEntity->connectSignalSteering(steering/*, &Behavior::onMessage*/);
-    // movEntity->setMovEntity(1, 250, 1000, 10);
-    // this->addChild(movEntity, 0, "movE");
-    // movEntity->setPosition(static_cast<Vec2>(visibleSize/4) + origin);
-
-
-
-    // auto const kwin_size = Director::getInstance()->getWinSize();
-
-    // // obstacle
-    // std::vector<Vec2> obstacle = {
-    //     Vec2(kwin_size.width*5/10, kwin_size.height*2/8 /*+ 0.01f*/),
-    //     Vec2(kwin_size.width*6/10, kwin_size.height*3/8 /*+ 0.01f*/),
-    //     Vec2(kwin_size.width*6/10, kwin_size.height*5/8 /*+ 0.01f*/),
-    //     Vec2(kwin_size.width*5/10, kwin_size.height*6/8 /*- 0.01f*/),
-    //     Vec2(kwin_size.width*4/10, kwin_size.height*5/8 /*- 0.01f*/),
-    //     Vec2(kwin_size.width*4/10, kwin_size.height*3/8 /*- 0.01f*/),
-    // };
-
-
-    // std::vector<Vec2> triangles;
-
-    /// delaunator
-    // std::vector<double> coords;
-
-    // int const ktiles = 1;
-    // int const ktile_points = ktiles + 1;
-
-    // double const ktile_height = kwin_size.height / (ktiles);
-    // double const ktile_width = kwin_size.width / (ktiles);
-
-    // coords.reserve(ktile_points * ktile_points);
-
-    // for(int r=0; r<ktile_points; r++)
-    // {
-    //     for(int c=0; c<ktile_points; c++)
-    //     {
-    //         if(!isInsideConvex(cocos2d::Vec2(c*ktile_width, r*ktile_height), obstacle))
-    //         {
-    //             coords.push_back(c*ktile_width);
-    //             coords.push_back(r*ktile_height);
-    //         }
-    //         else
-    //         {
-    //             continue;
-    //         }
-    //     }
-    // }
-
-    // for( auto &p : obstacle)
-    // {
-    //     coords.push_back(p.x);
-    //     coords.push_back(p.y);
-    // }
-
-    coords_.push_back(0), coords_.push_back(0);
-    coords_.push_back(visibleSize.width), coords_.push_back(0);
-    coords_.push_back(0), coords_.push_back(visibleSize.height);
-    coords_.push_back(visibleSize.width), coords_.push_back(visibleSize.height);
-    delaunator::Delaunator delaunay(coords_);
-    triangles_ = std::move(delaunay.triangles);
-    for(std::size_t i = 0; i < triangles_.size(); i+=3) 
-    {
-        Vec2 x = Vec2(delaunay.coords[2 * triangles_[i]],
-                      delaunay.coords[2 * triangles_[i] + 1]);
-        Vec2 y = Vec2(delaunay.coords[2 * triangles_[i + 1]],
-                      delaunay.coords[2 * triangles_[i + 1] + 1]);
-        Vec2 z = Vec2(delaunay.coords[2 * triangles_[i + 2]],
-                      delaunay.coords[2 * triangles_[i + 2] + 1]);
-        draw_delau_tri_->drawTriangle(x,y,z,Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
-    }
-
-    // draw->drawTriangle(Vec2(0,0),Vec2(kwin_size.width, kwin_size.height),Vec2(0,kwin_size.height),
-                           // Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
-    // 2048, 1536
-
-    // float S, T;
-    // const cocos2d::Vec2 A(kwin_size/2), B(FLT_MAX,A.y), C(kwin_size.width*6/10, kwin_size.height*3/8), D(kwin_size.width*6/10, kwin_size.height*5/8);
-    // int rs = cocos2d::Vec2::isLineIntersect(A, B, C, D, &S, &T);
-    // const float denom = crossProduct2Vector(A, B, C, D);
-    // const float f1 = crossProduct2Vector(C, D, C, A);
-    // const float f2 = crossProduct2Vector(A, B, C, A);
-
-    // CCLOG("(%.2f:%.2f %.2f:%.2f) x (%.2f:%.2f %.2f:%.2f) = %d %.2f %.2f", 
-    //       A.x,A.y, B.x,B.y, 
-    //       C.x,C.y, D.x,D.y, 
-    //       rs, S, T);
-    // CCLOG("%.2f %.2f %.2f %.2f %.2f", denom, f1, f2, f1/denom, f2/denom);
-
     initTouchEvent();
     scheduleUpdate();
     return true;
 }
 
-// void TestDelaunay::setHomeScene(cocos2d::Scene *scene)
-// {
-//     home_scene_ = scene;
-// }
-
-// void TestDelaunay::setBackScene(cocos2d::Scene *scene)
-// {
-//     if(scene == nullptr) return;
-
-//     if(back_scene_)
-//         back_scene_->release();
-    
-//     back_scene_ = scene;
-//     back_scene_->retain();
-// }
-
-void TestDelaunay::doJob()
+void TestDelaunay::drawPolygons()
 {
     draw_delau_tri_->clear();
-    coords_.clear();
-    auto const kVisible = Director::getInstance()->getVisibleSize();
-    coords_.push_back(0), coords_.push_back(0);
-    coords_.push_back(kVisible.width), coords_.push_back(0);
-    coords_.push_back(0), coords_.push_back(kVisible.height);
-    coords_.push_back(kVisible.width), coords_.push_back(kVisible.height);
-
-    for(std::vector<cocos2d::Vec2> &poly : poly_list_)
+    for(Polygon2D &poly : polygons_)
     {
-        for(cocos2d::Vec2 &points : poly)
+        std::vector<cocos2d::Vec2> &shape = poly.shape_;
+        for(std::size_t i = 0; i < poly.tris_.size()/3; i++) 
         {
-            coords_.push_back(points.x);
-            coords_.push_back(points.y);
+            cocos2d::Vec2 t1,t2,t3;
+            std::tie(t1,t2,t3) = poly.triangle(i);
+
+            draw_delau_tri_->drawTriangle(t1,t2,t3,
+                                         Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
+        }
+
+        draw_delau_tri_->drawRect(poly.bmin_, poly.bmax_, Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
+    }
+
+}
+
+bool TestDelaunay::doRecast()
+{
+    static cocos2d::Size const kVisible = cocos2d::Director::getInstance()->getVisibleSize();
+
+    m_cfg.cs = 10;
+    m_cfg.ch = 1;
+    memset(m_cfg.bmin, 0, sizeof(m_cfg.bmin) * 3);
+    m_cfg.bmax[0] = kVisible.width;
+    m_cfg.bmax[1] = 0;
+    m_cfg.bmax[2] = kVisible.height;
+    m_cfg.walkableSlopeAngle = 0;
+    m_cfg.walkableHeight = (int)0;
+    m_cfg.walkableClimb = (int)0;
+    m_cfg.walkableRadius = (int)0.5;
+    // m_cfg.maxEdgeLen = (int)(m_edgeMaxLen / m_cellSize);
+    // m_cfg.maxSimplificationError = m_edgeMaxError;
+    // m_cfg.minRegionArea = (int)rcSqr(m_regionMinSize);      // Note: area = size*size
+    // m_cfg.mergeRegionArea = (int)rcSqr(m_regionMergeSize);  // Note: area = size*size
+    m_cfg.maxVertsPerPoly = 0x1000;
+    // m_cfg.detailSampleDist = m_detailSampleDist < 0.9f ? 0 : m_cellSize * m_detailSampleDist;
+    // m_cfg.detailSampleMaxError = m_cellHeight * m_detailSampleMaxError;
+    
+    // if(m_solid) return false;
+    // m_ctx.enableLog(false);
+    m_ctx.enableTimer(true);
+
+    m_ctx.resetTimers();
+    m_ctx.startTimer(RC_TIMER_TOTAL);
+
+    rcCalcGridSize(m_cfg.bmin, m_cfg.bmax, m_cfg.cs, &m_cfg.width, &m_cfg.height);
+    m_solid = ::rcAllocHeightfield();
+    rcCreateHeightfield(&m_ctx, *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch);
+    /// allocate & init RC_WALKABLE_AREA spans
+    for(int x=0; x<m_solid->width; x++) 
+    {
+        for(int y=0; y<m_solid->height; y++) 
+        {
+            // rcAddSpan(&m_ctx, *m_solid, x, y, (uint16_t)0, (uint16_t)0, RC_WALKABLE_AREA, m_cfg.walkableClimb);
+            rcAddSpan(&m_ctx, *m_solid, x, y, (uint16_t)0, (uint16_t)0, RC_WALKABLE_AREA, m_cfg.walkableClimb);
+            /// update RC_NULL_AREA spans
+            for(auto &poly : polygons_)
+            {
+                if(pointInPoly2D(poly.shape_, {(float)x,(float)y}))
+                {
+                    m_solid->spans[x + y*m_cfg.width]->area = RC_NULL_AREA;
+                }
+            }
         }
     }
 
-    doDelaunay();
-}
-
-void TestDelaunay::doDelaunay()
-{
-    delaunator::Delaunator delaunay(coords_);
-    triangles_ = std::move(delaunay.triangles);
-    for(std::size_t i = 0; i < triangles_.size(); i+=3) 
+    m_chf = rcAllocCompactHeightfield();
+    if (!m_chf)
     {
-        Vec2 x = Vec2(delaunay.coords[2 * triangles_[i]],
-                      delaunay.coords[2 * triangles_[i] + 1]);
-        Vec2 y = Vec2(delaunay.coords[2 * triangles_[i + 1]],
-                      delaunay.coords[2 * triangles_[i + 1] + 1]);
-        Vec2 z = Vec2(delaunay.coords[2 * triangles_[i + 2]],
-                      delaunay.coords[2 * triangles_[i + 2] + 1]);
-        draw_delau_tri_->drawTriangle(x,y,z,
-                                     Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'chf'.");
+        return false;
     }
+    if (!rcBuildCompactHeightfield(&m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid, *m_chf))
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
+        return false;
+    }
+    
+    if (!false)
+    {
+        rcFreeHeightField(m_solid);
+        m_solid = 0;
+    }
+        
+    // Erode the walkable area by agent radius.
+    if (!rcErodeWalkableArea(&m_ctx, m_cfg.walkableRadius, *m_chf))
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
+        return false;
+    }
+
+    // // (Optional) Mark areas.
+    // const ConvexVolume* vols = m_geom->getConvexVolumes();
+    // for (int i  = 0; i < m_geom->getConvexVolumeCount(); ++i)
+    //     rcMarkConvexPolyArea(&m_ctx, vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *m_chf);
+
+    if (!rcBuildDistanceField(&m_ctx, *m_chf))
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
+        return false;
+    }
+    
+    // Partition the walkable surface into simple regions without holes.
+    if (!rcBuildRegions(&m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
+        return false;
+    }
+
+    //
+    // Step 5. Trace and simplify region contours.
+    //
+    
+    // Create contours.
+    m_cset = rcAllocContourSet();
+    if (!m_cset)
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'cset'.");
+        return false;
+    }
+    if (!rcBuildContours(&m_ctx, *m_chf, m_cfg.maxSimplificationError, m_cfg.maxEdgeLen, *m_cset))
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Could not create contours.");
+        return false;
+    }
+
+    //
+    // Step 6. Build polygons mesh from contours.
+    //
+    
+    // Build polygon navmesh from the contours.
+    m_pmesh = rcAllocPolyMesh();
+    if (!m_pmesh)
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmesh'.");
+        return false;
+    }
+    if (!rcBuildPolyMesh(&m_ctx, *m_cset, m_cfg.maxVertsPerPoly, *m_pmesh))
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Could not triangulate contours.");
+        return false;
+    }
+    
+    //
+    // Step 7. Create detail mesh which allows to access approximate height on each polygon.
+    //
+    
+    m_dmesh = rcAllocPolyMeshDetail();
+    if (!m_dmesh)
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmdtl'.");
+        return false;
+    }
+
+    if (!rcBuildPolyMeshDetail(&m_ctx, *m_pmesh, *m_chf, m_cfg.detailSampleDist, m_cfg.detailSampleMaxError, *m_dmesh))
+    {
+        m_ctx.log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
+        return false;
+    }
+
+    if (!false)
+    {
+        rcFreeCompactHeightfield(m_chf);
+        m_chf = 0;
+        rcFreeContourSet(m_cset);
+        m_cset = 0;
+    }
+    m_ctx.stopTimer(RC_TIMER_TOTAL);
+    // Show performance stats.
+    // duLogBuildTimes(*m_ctx, m_ctx.getAccumulatedTime(RC_TIMER_TOTAL));
+    // m_ctx.log(RC_LOG_PROGRESS, ">> Polymesh: %d vertices  %d polygons", m_pmesh->nverts, m_pmesh->npolys);
+    
+    CCLOG("total: %f",m_ctx.getAccumulatedTime(RC_TIMER_TOTAL)/1000.0f);
+
+	return true;
 }
 
 void TestDelaunay::initTouchEvent()
@@ -293,16 +284,16 @@ void TestDelaunay::initTouchEvent()
         cocos2d::Vec2 curr_touch = touches[0]->getLocation();
 
         /// remove or start a convex
-        if (pts_.empty())
+        if (touch_points_.empty())
         {
             bool is_removing = false;
-            for(decltype(poly_list_.rbegin()) it = poly_list_.rbegin(); it != poly_list_.rend(); it++)
+            for(decltype(polygons_.rbegin()) it = polygons_.rbegin(); it != polygons_.rend(); it++)
             {
-                if(pointInPoly2D(*it, curr_touch))
+                if(pointInPoly2D(it->shape_, curr_touch))
                 {
                     /// remove
-                    poly_list_.erase((std::next(it)).base());
-                    doJob();
+                    polygons_.erase((std::next(it)).base());
+                    drawPolygons();
                     is_removing = true;
                     break;
                 }
@@ -310,14 +301,14 @@ void TestDelaunay::initTouchEvent()
 
             if(!is_removing)
             {
-                pts_.push_back(curr_touch);
+                touch_points_.push_back(curr_touch);
                 draw_debug_->drawDot(curr_touch, 3, cocos2d::Color4F::YELLOW);
             }
             else
             {
                 draw_convex_->clear();
-                for(auto &poly : poly_list_)
-                    draw_convex_->drawPolygon(poly.data(), poly.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
+                for(auto &poly : polygons_)
+                    draw_convex_->drawPolygon(poly.shape_.data(), poly.shape_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
             }
         }
         else /// add point or complete convex
@@ -325,8 +316,9 @@ void TestDelaunay::initTouchEvent()
             /// add new point or complete
             if (prev_touch_ != curr_touch) /// add new point
             {
-                pts_.push_back(curr_touch);
-                convexhull2D(pts_, hull_);
+                touch_points_.push_back(curr_touch);
+                hull_.reserve(4);
+                convexhull2D(touch_points_, hull_);
 
                 draw_debug_->drawDot(curr_touch, 3, cocos2d::Color4F::YELLOW);
 
@@ -335,14 +327,15 @@ void TestDelaunay::initTouchEvent()
             else
             {
                 draw_debug_->clear();
-                pts_.clear();
+                touch_points_.clear();
                 /// complete convex
                 if(hull_.size() > 2)
                 {
-                    poly_list_.push_back(hull_);
                     draw_convex_->drawPolygon(hull_.data(), hull_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
 
-                    doJob();
+                    polygons_.push_back(Polygon2D(hull_));
+                    // polygons_.back().tris_ = triangulate<cocos2d::Vec2>(polygons_.back().shape_);
+                    drawPolygons();
                 }
             }
         }
@@ -351,62 +344,58 @@ void TestDelaunay::initTouchEvent()
     };
     /// add event
     this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, this);
-    
-}
+    auto keyboardListener = cocos2d::EventListenerKeyboard::create();
+    using KeyCode = cocos2d::EventKeyboard::KeyCode;
+    keyboardListener->onKeyReleased = [=](KeyCode code, cocos2d::Event *event)
+    {
+        std::string keyCode = std::to_string(static_cast<int>(code));
+        switch(code)
+        {
+            case KeyCode::KEY_Q:
+            {
+                
+            }
+            break;
+            /// PolyFillType
+            case KeyCode::KEY_W:
+            {
+                
+            }
+            break;
+            /// PolyType
+            case KeyCode::KEY_E:
+            {
+                
+            }
+            break;
 
-void TestDelaunay::menuCloseCallback(Ref* pSender)
-{
-    //Close the cocos2d-x game scene and quit the application
-    Director::getInstance()->end();
+            case KeyCode::KEY_R:
+            {
+            }
+            break;
+            
+            /// Execution
+            case KeyCode::KEY_SPACE:
+            {
+                // add_mode_ ^= 1;
+                bool ret = doRecast();
+                CCLOG("[!] %d\n", ret);
+            }
+            break;
 
-    /*To navigate back to native iOS screen(if present) without quitting the application  ,do not use Director::getInstance()->end() as given above,instead trigger a custom event created in RootViewController.mm as below*/
+            default:
+            {
+            }
+            break;
+        }
 
-    //EventCustom customEndEvent("game_scene_close_event");
-    //_eventDispatcher->dispatchEvent(&customEndEvent);
+    };
+
+    this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 }
 
 void TestDelaunay::update(float delta)
 {
     Scene::update(delta);
-
-    enumerateChildren("//movE", [=](Node *node)
-    {
-        MovingEntity *movEntity = reinterpret_cast<MovingEntity*>(node);
-        // if(movEntity)    
-            // movEntity->setTarget();
-
-            // movEntity->setPosition(movEntity->getPosition() + cocos2d::Vec2(100 * delta,0));
-        return false;
-    });
 }
 
-bool Behavior::init()
-{
-    return true;
-}
-
-cocos2d::Vec2 Behavior::onMessage(std::string const &msg, 
-                                  float maxSpeed,
-                                  cocos2d::Vec2 const &velocity, 
-                                  cocos2d::Vec2 const &crrPos, 
-                                  cocos2d::Vec2 const &target)
-{
-    cocos2d::Vec2 ret = cocos2d::Vec2::ZERO;
-
-    if(msg == "seek")
-    {
-        // Vector2D DesiredVelocity = (TargetPos - m_pVehicle->Pos()).getNormalized()
-                                    // * m_pVehicle->MaxSpeed();
-
-        // return (DesiredVelocity - m_pVehicle->Velocity());
-        ret = (target - crrPos).getNormalized() * maxSpeed;
-        return ret - velocity;
-    }
-
-    return ret;
-}
-
-// void TestDelaunay::onEnter()
-// {
-//     Scene::onEnter();
-// }

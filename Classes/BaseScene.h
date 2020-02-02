@@ -5,9 +5,6 @@
 template<class T>
 constexpr const T& wrap( const T& v, const T& lo, const T& hi )
 {
-    // assert( !(hi < lo) );
-    // if(v > hi) return lo + v%hi;
-    // return (v < lo) ? lo : (hi < v) ? hi : v;
     return lo + (v%hi);
 }
 

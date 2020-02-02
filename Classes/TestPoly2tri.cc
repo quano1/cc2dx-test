@@ -584,7 +584,7 @@ void TestPoly2tri::executeClipper()
                 // path.push_back({p.x, p.y});
                 path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
             }
-            
+
             clp.push_back(path);
         }
     }
@@ -631,17 +631,17 @@ std::vector<cocos2d::Vec2> TestPoly2tri::triangulate(ClipperLib::PolyNode *pln)
     std::vector<cocos2d::Vec2> ret;
     std::vector<p2t::Point*> poly;
     std::vector<std::vector<p2t::Point*>> holes;
-    std::allocator<p2t::Point> a;
+    std::allocator<p2t::Point> alloca;
 
     {
         auto contour = pln->Contour;
         poly.reserve(contour.size());
-        p2t::Point *pts = (p2t::Point *)a.allocate(contour.size());
+        p2t::Point *pts = (p2t::Point *)alloca.allocate(contour.size());
         auto temp_pts = pts;
         for(auto &p : contour)
         {
             // poly.push_back(new (std::nothrow) p2t::Point(p.X, p.Y));
-            a.construct(temp_pts, p2t::Point(p.X/kPrecision, p.Y/kPrecision));
+            alloca.construct(temp_pts, p2t::Point(p.X/kPrecision, p.Y/kPrecision));
             poly.push_back(temp_pts);
             temp_pts++;
         }
@@ -655,12 +655,12 @@ std::vector<cocos2d::Vec2> TestPoly2tri::triangulate(ClipperLib::PolyNode *pln)
         std::vector<p2t::Point*> hl;
         auto contour = pln->Contour;
         hl.reserve(contour.size());
-        p2t::Point *pts = (p2t::Point *)a.allocate(contour.size());
+        p2t::Point *pts = (p2t::Point *)alloca.allocate(contour.size());
         auto temp_pts = pts;
         for(auto &p : contour)
         {
             // poly.push_back(new (std::nothrow) p2t::Point(p.X, p.Y));
-            a.construct(temp_pts, p2t::Point(p.X/kPrecision, p.Y/kPrecision));
+            alloca.construct(temp_pts, p2t::Point(p.X/kPrecision, p.Y/kPrecision));
             hl.push_back(temp_pts);
             temp_pts++;
         }
@@ -681,11 +681,11 @@ std::vector<cocos2d::Vec2> TestPoly2tri::triangulate(ClipperLib::PolyNode *pln)
         }
     }
 
-    a.deallocate(poly[0], poly.size());
+    alloca.deallocate(poly[0], poly.size());
 
     for(auto hl : holes)
     {
-        a.deallocate(hl[0], hl.size());
+        alloca.deallocate(hl[0], hl.size());
     }
 
     return ret;

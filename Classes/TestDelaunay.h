@@ -26,6 +26,7 @@
 
 #include "cocos2d.h"
 #include "BaseScene.h"
+#include "recast/Recast/Recast.h"
 
 inline void truncate(cocos2d::Vec2 *vec, double max)
 {
@@ -36,21 +37,55 @@ inline void truncate(cocos2d::Vec2 *vec, double max)
     }
 }
 
-class Behavior : public cocos2d::Node
+class Polygon2D
 {
 public:
-    cocos2d::Vec2 onMessage(std::string const &, 
-                                  float,
-                                  cocos2d::Vec2 const &, 
-                                  cocos2d::Vec2 const &, 
-                                  cocos2d::Vec2 const &);
-    virtual bool init();
+    Polygon2D();
+    Polygon2D(std::vector<cocos2d::Vec2> &shape);
+    ~Polygon2D() = default;
+    std::tuple<cocos2d::Vec2&, cocos2d::Vec2&, cocos2d::Vec2&> triangle(size_t idx);
 
-    CREATE_FUNC(Behavior);
-
-private:
+    std::vector<cocos2d::Vec2> shape_;              //< points
+    cocos2d::Vec2 bmin_, bmax_; //< bounding box
+    std::vector<int> tris_; //< triangles
 };
 
+class BuildContex : public rcContext
+{
+public:
+    void doLog(const rcLogCategory /*category*/, const char* msg, const int /*len*/) 
+    {
+        CCLOG("dolog: %s\n", msg);
+    }
+
+    /// Clears all timers. (Resets all to unused.)
+    void doResetTimers() 
+    {
+
+    }
+
+    /// Starts the specified performance timer.
+    ///  @param[in]     label   The category of timer.
+    void doStartTimer(const rcTimerLabel /*label*/) 
+    {
+
+    }
+
+    /// Stops the specified performance timer.
+    ///  @param[in]     label   The category of the timer.
+    void doStopTimer(const rcTimerLabel /*label*/) 
+    {
+
+    }
+
+    /// Returns the total accumulated time of the specified performance timer.
+    ///  @param[in]     label   The category of the timer.
+    ///  @return The accumulated time of the timer, or -1 if timers are disabled or the timer has never been started.
+    int doGetAccumulatedTime(const rcTimerLabel /*label*/) const 
+    { 
+        return -1; 
+    }
+};
 
 class TestDelaunay : public BaseScene
 {
@@ -64,32 +99,29 @@ public:
     virtual void update(float) override;
     
     /// a selector callback
-    void menuCloseCallback(cocos2d::Ref* sender);
     void initTouchEvent();
-    void doDelaunay();
-    void doJob();
+    void drawPolygons();
+    bool doRecast();
 
-    // void setHomeScene(cocos2d::Scene *scene);
-    // void setBackScene(cocos2d::Scene *scene);
-
-    // implement the "static create()" method manually
     CREATE_FUNC(TestDelaunay);
 
-    std::vector<std::size_t> triangles_;
-    std::vector<double> coords_;
-    std::vector<cocos2d::Vec2> pts_;
+    std::vector<cocos2d::Vec2> touch_points_;
     std::vector<cocos2d::Vec2> hull_;
-    std::list<std::vector<cocos2d::Vec2>> poly_list_;
+    std::list<Polygon2D> polygons_;
     cocos2d::Vec2 prev_touch_;
 
     cocos2d::DrawNode *draw_debug_, 
                       *draw_convex_, 
                       *draw_delau_tri_;
 
-private:
-    // Behavior m_steeringBehavior;
-    // cocos2d::Scene *back_scene_;
-    // cocos2d::Scene *home_scene_;
+    BuildContex m_ctx;
+    rcHeightfield* m_solid;
+    rcCompactHeightfield* m_chf;
+    rcContourSet* m_cset;
+    rcPolyMesh* m_pmesh;
+    rcPolyMeshDetail* m_dmesh;
+    rcConfig m_cfg;
 
+private:
 };
 
