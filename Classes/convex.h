@@ -3,6 +3,44 @@
 #include <vector>
 #include <cocos2d.h>
 
+
+/// https://blackpawn.com/texts/pointinpoly/default.html
+template <typename V>
+inline bool isPointInTri(const V &p, const V &a, const V &b, const V &c)
+{
+    // Compute vectors
+    V v0 = c - a;
+    V v1 = b - a;
+    V v2 = p - a;
+
+    // Compute dot products
+    float dot00 = v0 * v0;
+    float dot01 = v0 * v1;
+    float dot02 = v0 * v2;
+    float dot11 = v1 * v1;
+    float dot12 = v1 * v2;
+
+    // Compute barycentric coordinates
+    float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+    float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+    // Check if point is in triangle
+    return (u >= 0) && (v >= 0) && (u + v < 1);
+}
+
+template <typename V>
+inline bool isPointInConvex(const V &p, const std::vector<V> &poly)
+{
+    for(int i=0; i<poly.size()-2; i+=2)
+    {
+        if(isPointInTri(p, poly[0], poly[i+1], poly[i+2]))
+            return true;
+    }
+
+    return false;
+}
+
 // typedef std::pair<float, float> cocos2d::Vec2;
 
 // template <typename T>
@@ -153,9 +191,6 @@ inline size_t pointInPoly2D(std::vector<cocos2d::Vec2> const &verts, cocos2d::Ve
     }
     return c;
 }
-
-
-
 
 // Returns T iff (v_i, v_j) is a proper internal *or* external
 // diagonal of P, *ignoring edges incident to v_i and v_j*.

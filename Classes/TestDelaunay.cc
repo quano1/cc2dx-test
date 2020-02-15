@@ -32,6 +32,7 @@
 #include "convex.h"
 #include "recast/Recast/Recast.h"
 // #include "3rdparty/clipper/clipper.hpp"
+#include "utils.h"
 
 USING_NS_CC;
 
@@ -274,6 +275,11 @@ bool TestDelaunay::doRecast()
 	return true;
 }
 
+float operator* (const cocos2d::Vec2 &v1, const cocos2d::Vec2 &v2)
+{
+    return v1.dot(v2);
+}
+
 void TestDelaunay::initTouchEvent()
 {
     EventListenerTouchAllAtOnce *listener = EventListenerTouchAllAtOnce::create();
@@ -281,15 +287,21 @@ void TestDelaunay::initTouchEvent()
     /// pressed event
     listener->onTouchesBegan = [=] (const std::vector<Touch*>& touches, Event *pEvent) mutable
     {
+        TRACE();
         cocos2d::Vec2 curr_touch = touches[0]->getLocation();
-
         /// remove or start a convex
         if (touch_points_.empty())
         {
             bool is_removing = false;
+            ::utils::Timer<std::chrono::duration<float,std::micro>> pip1, pip2;
+            float t1=0, t2=0;
             for(decltype(polygons_.rbegin()) it = polygons_.rbegin(); it != polygons_.rend(); it++)
             {
-                if(pointInPoly2D(it->shape_, curr_touch))
+                // if(pointInPoly2D(it->shape_, curr_touch))
+                pip1.reset();pointInPoly2D(it->shape_, curr_touch); t1+=pip1.elapse().count();
+                pip2.reset();
+                bool ret = isPointInConvex<cocos2d::Vec2>(curr_touch, it->shape_); t2+=pip2.elapse().count();
+                if(ret)
                 {
                     /// remove
                     polygons_.erase((std::next(it)).base());
@@ -298,7 +310,7 @@ void TestDelaunay::initTouchEvent()
                     break;
                 }
             }
-
+LOGD("%.2f %.2f", t1, t2);
             if(!is_removing)
             {
                 touch_points_.push_back(curr_touch);
@@ -316,6 +328,7 @@ void TestDelaunay::initTouchEvent()
             /// add new point or complete
             if (prev_touch_ != curr_touch) /// add new point
             {
+                TIMER(convexhull2D);
                 touch_points_.push_back(curr_touch);
                 hull_.reserve(4);
                 convexhull2D(touch_points_, hull_);
