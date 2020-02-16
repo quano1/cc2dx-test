@@ -27,6 +27,7 @@
 #include "cocos2d.h"
 #include "BaseScene.h"
 #include "recast/Recast/Recast.h"
+#include "Poly2D.h"
 
 inline void truncate(cocos2d::Vec2 *vec, double max)
 {
@@ -36,19 +37,6 @@ inline void truncate(cocos2d::Vec2 *vec, double max)
         (*vec) *= max;
     }
 }
-
-class Polygon2D
-{
-public:
-    Polygon2D();
-    Polygon2D(std::vector<cocos2d::Vec2> &shape);
-    ~Polygon2D() = default;
-    std::tuple<cocos2d::Vec2&, cocos2d::Vec2&, cocos2d::Vec2&> triangle(size_t idx);
-
-    std::vector<cocos2d::Vec2> shape_;              //< points
-    cocos2d::Vec2 bmin_, bmax_; //< bounding box
-    std::vector<int> tris_; //< triangles
-};
 
 class BuildContex : public rcContext
 {

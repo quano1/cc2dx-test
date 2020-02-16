@@ -3,6 +3,14 @@
 #include <vector>
 #include <cocos2d.h>
 
+/// cocos2d
+inline float operator* (const cocos2d::Vec2 &v1, const cocos2d::Vec2 &v2)
+{
+    return v1.dot(v2);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 /// https://blackpawn.com/texts/pointinpoly/default.html
 template <typename V>
@@ -32,7 +40,7 @@ inline bool isPointInTri(const V &p, const V &a, const V &b, const V &c)
 template <typename V>
 inline bool isPointInConvex(const V &p, const std::vector<V> &poly)
 {
-    for(int i=0; i<poly.size()-2; i+=2)
+    for(int i=0; i<poly.size()-2; i++)
     {
         if(isPointInTri(p, poly[0], poly[i+1], poly[i+2]))
             return true;
@@ -179,14 +187,19 @@ inline size_t convexhull2D(std::vector<cocos2d::Vec2> const &pts, std::vector<co
     return out.size();
 }
 
-inline size_t pointInPoly2D(std::vector<cocos2d::Vec2> const &verts, cocos2d::Vec2 const &p)
+/// raycast
+inline bool isPointInPoly(cocos2d::Vec2 const &p, std::vector<cocos2d::Vec2> const &verts)
 {
-    size_t i, j, c = 0;
+    size_t i, j;
+    bool c = false;
     size_t nvert = verts.size();
     for (i = 0, j = nvert-1; i < nvert; j = i, i++)
     {
-        if (((verts[i].y > p.y) != (verts[j].y > p.y)) &&
-            (p.x < (verts[j].x-verts[i].x) * (p.y-verts[i].y) / (verts[j].y-verts[i].y) + verts[i].x) )
+        const auto &v1 = verts[i];
+        const auto &v2 = verts[j];
+        float raycast_intersection_x = (v2.x-v1.x) * (v1.y-p.y) / (v1.y-v2.y) + v1.x;
+        /// if p lies on the left of the edge
+        if (((v1.y > p.y) != (v2.y > p.y)) && (p.x < raycast_intersection_x))
             c = !c;
     }
     return c;

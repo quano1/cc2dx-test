@@ -3,6 +3,7 @@
 #include "TestDelaunay.h"
 #include "TestClipper.h"
 #include "TestPoly2tri.h"
+#include "TestNavMesh.h"
 
 USING_NS_CC;
 
@@ -62,6 +63,7 @@ void MainScene::addAllScene()
         addScene<TestDelaunay>("Test Delaunay");
         addScene<TestClipper>("Test Clipper");
         addScene<TestPoly2tri>("Test Poly2tri");
+        addScene<TestNavMesh>("Test NavMesh");
     }
 
 }

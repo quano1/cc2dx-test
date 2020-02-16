@@ -11,25 +11,25 @@ constexpr const T& wrap( const T& v, const T& lo, const T& hi )
 class BaseScene : public cocos2d::Scene
 {
 public:
-    BaseScene() : cocos2d::Scene(), home_scene_(nullptr), back_scene_(nullptr)
+    BaseScene() : cocos2d::Scene()/*, home_scene_(nullptr), back_scene_(nullptr)*/
     {
         setUpKeyBoard();
     }
 
-    inline void setHomeScene(cocos2d::Scene *scene)
-    {
-        home_scene_ = scene;
-    }
+    // inline void setHomeScene(cocos2d::Scene *scene)
+    // {
+    //     home_scene_ = scene;
+    // }
 
-    inline void setBackScene(cocos2d::Scene *scene)
-    {
-        if(scene == nullptr) return;
+    // inline void setBackScene(cocos2d::Scene *scene)
+    // {
+    //     if(scene == nullptr) return;
 
-        scene->retain();
-        if(back_scene_) back_scene_->release();
+    //     scene->retain();
+    //     if(back_scene_) back_scene_->release();
 
-        back_scene_ = scene;
-    }
+    //     back_scene_ = scene;
+    // }
 
     inline void setUpKeyBoard()
     {
@@ -51,13 +51,13 @@ public:
                 }
                 break;
 
-                case cocos2d::EventKeyboard::KeyCode::KEY_HOME:
-                {
-                    if(home_scene_ == nullptr) return;
+                // case cocos2d::EventKeyboard::KeyCode::KEY_HOME:
+                // {
+                //     if(home_scene_ == nullptr) return;
 
-                    cocos2d::Director::getInstance()->replaceScene(home_scene_);
-                }
-                break;
+                //     cocos2d::Director::getInstance()->replaceScene(home_scene_);
+                // }
+                // break;
 
                 default:
                 {
@@ -87,7 +87,7 @@ public:
     
 private:
     // Behavior m_steeringBehavior;
-    cocos2d::Scene *back_scene_;
-    cocos2d::Scene *home_scene_;
+    // cocos2d::Scene *back_scene_;
+    // cocos2d::Scene *home_scene_;
 
 };

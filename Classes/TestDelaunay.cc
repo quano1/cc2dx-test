@@ -32,37 +32,10 @@
 #include "convex.h"
 #include "recast/Recast/Recast.h"
 // #include "3rdparty/clipper/clipper.hpp"
+#include "Poly2D.h"
 #include "utils.h"
 
 USING_NS_CC;
-
-Polygon2D::Polygon2D()
-{
-
-}
-
-Polygon2D::Polygon2D(std::vector<cocos2d::Vec2> &shape)
-{
-    shape_ = std::move(shape);
-    bmin_ = shape_[0];
-    bmax_ = shape_[0];
-    for(size_t i=1; i<shape_.size(); i++)
-    {
-        if(bmin_.x > shape_[i].x) bmin_.x = shape_[i].x;
-        if(bmin_.y > shape_[i].y) bmin_.y = shape_[i].y;
-        if(bmax_.x < shape_[i].x) bmax_.x = shape_[i].x;
-        if(bmax_.y < shape_[i].y) bmax_.y = shape_[i].y;
-    }
-
-    tris_ = triangulate<cocos2d::Vec2>(shape_);
-}
-
-std::tuple<cocos2d::Vec2&, cocos2d::Vec2&, cocos2d::Vec2&> Polygon2D::triangle(size_t idx)
-{
-    size_t i = idx * 3;
-    return std::tie(shape_[tris_[i]], shape_[tris_[i+1]], shape_[tris_[i+2]]);
-}
-
 
 Scene* TestDelaunay::createScene()
 {
@@ -99,19 +72,8 @@ void TestDelaunay::drawPolygons()
     draw_delau_tri_->clear();
     for(Polygon2D &poly : polygons_)
     {
-        std::vector<cocos2d::Vec2> &shape = poly.shape_;
-        for(std::size_t i = 0; i < poly.tris_.size()/3; i++) 
-        {
-            cocos2d::Vec2 t1,t2,t3;
-            std::tie(t1,t2,t3) = poly.triangle(i);
-
-            draw_delau_tri_->drawTriangle(t1,t2,t3,
-                                         Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
-        }
-
-        draw_delau_tri_->drawRect(poly.bmin_, poly.bmax_, Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
+        poly.drawTris(draw_delau_tri_);
     }
-
 }
 
 bool TestDelaunay::doRecast()
@@ -156,7 +118,7 @@ bool TestDelaunay::doRecast()
             /// update RC_NULL_AREA spans
             for(auto &poly : polygons_)
             {
-                if(pointInPoly2D(poly.shape_, {(float)x,(float)y}))
+                if(isPointInPoly({(float)x,(float)y}, poly.shape_))
                 {
                     m_solid->spans[x + y*m_cfg.width]->area = RC_NULL_AREA;
                 }
@@ -275,11 +237,6 @@ bool TestDelaunay::doRecast()
 	return true;
 }
 
-float operator* (const cocos2d::Vec2 &v1, const cocos2d::Vec2 &v2)
-{
-    return v1.dot(v2);
-}
-
 void TestDelaunay::initTouchEvent()
 {
     EventListenerTouchAllAtOnce *listener = EventListenerTouchAllAtOnce::create();
@@ -298,9 +255,9 @@ void TestDelaunay::initTouchEvent()
             for(decltype(polygons_.rbegin()) it = polygons_.rbegin(); it != polygons_.rend(); it++)
             {
                 // if(pointInPoly2D(it->shape_, curr_touch))
-                pip1.reset();pointInPoly2D(it->shape_, curr_touch); t1+=pip1.elapse().count();
+                pip1.reset();isPointInPoly(curr_touch, it->shape_); t1+=pip1.elapse();
                 pip2.reset();
-                bool ret = isPointInConvex<cocos2d::Vec2>(curr_touch, it->shape_); t2+=pip2.elapse().count();
+                bool ret = isPointInConvex<cocos2d::Vec2>(curr_touch, it->shape_); t2+=pip2.elapse();
                 if(ret)
                 {
                     /// remove

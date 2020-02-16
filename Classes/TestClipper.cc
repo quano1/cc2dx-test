@@ -190,7 +190,7 @@ void TestClipper::initEvents()
             bool is_removing = false;
             for(decltype(clip_paths_[poly_type_].rbegin()) it = clip_paths_[poly_type_].rbegin(); it != clip_paths_[poly_type_].rend(); it++)
             {
-                if(pointInPoly2D(*it, curr_touch))
+                if(isPointInPoly(curr_touch, *it))
                 {
                     /// remove
                     clip_paths_[poly_type_].erase((std::next(it)).base());
