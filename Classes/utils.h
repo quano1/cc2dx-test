@@ -48,24 +48,22 @@ Timer(std::string id) : id_(id), begin_(clock::now()) {CCLOG(" %s", id.data());}
 		CCLOG(" ~%s: %.3f (ms)", id_.data(), elapse());
 }
 
-void reset()
+D_type reset()
 {
+	D_type ret = std::chrono::duration_cast<D>(clock::now() - begin_).count();
 	begin_ = clock::now();
+	return ret;
 }
 
 D_type elapse() const
 {
-	using namespace std::chrono;
-	D_type ret = duration_cast<D>(clock::now() - begin_).count();
-	return ret;
+	return std::chrono::duration_cast<D>(clock::now() - begin_).count();
 }
 
 template <class Duration=D>
 Duration duration() const
 {
-	using namespace std::chrono;
-	Duration ret = duration_cast<Duration>(clock::now() - begin_);
-	return ret;
+	return std::chrono::duration_cast<Duration>(clock::now() - begin_);
 }
 
 clock::time_point begin_;
