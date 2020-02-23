@@ -202,6 +202,7 @@ void TestNavMesh::execute()
     path << ClipperLib::IntPoint(0,kVisible.height);
     sub.push_back(path);
     /// obstacles
+    ClipperLib::ClipperOffset co;
     for(auto &poly : polygons_)
     {
         ClipperLib::Path path;
@@ -209,51 +210,52 @@ void TestNavMesh::execute()
         {
             path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
         }
-        clp.push_back(path);
+        co.AddPath(path, ClipperLib::JoinType::jtSquare, ClipperLib::EndType::etClosedPolygon);
     }
-    /// create holes
+    float const kDelta = 300.f;
+    /// clp = obstacles + offset
+    co.Execute(clp, kDelta);
+
+    /// sub - clp
     clipper.AddPaths(sub, ClipperLib::PolyType::ptSubject, true);
     clipper.AddPaths(clp, ClipperLib::PolyType::ptClip, true);
     clipper.Execute(ClipperLib::ClipType::ctDifference, sol_tree, pft, pft);
     
-    /// add offset for holes
-    ClipperLib::ClipperOffset co;
-    for(auto pn=sol_tree.GetFirst(); pn; pn=pn->GetNext())
-    {
-        if(pn->IsHole()) co.AddPath(pn->Contour, ClipperLib::JoinType::jtSquare, ClipperLib::EndType::etClosedPolygon);
-    }
-    float const kDelta = 300.f;
-    co.Execute(sol, kDelta);
-    
-    std::vector<float> verts;
-    std::vector<int> indices;
-    verts.reserve(0x1000);
-    ClipperLib::PolyNode* pn = sol_tree.GetFirst();
-    int index=0;
-    int start_index = index;
-    for(ClipperLib::IntPoint &p : pn->Contour)
-    {
-        verts.push_back(p.X/kPrecision);
-        verts.push_back(p.Y/kPrecision);
-        indices.push_back(index);
-        indices.push_back(index+1);
-    }
-    indices.back() = start_index;
+
+    // std::vector<float> verts;
+    // std::vector<int> indices;
+    // verts.reserve(0x1000);
+    // indices.reserve(0x1000);
+    // ClipperLib::PolyNode* pn = sol_tree.GetFirst();
+    // int index=0;
+    // int start_index = index;
+    // for(ClipperLib::IntPoint &p : pn->Contour)
+    // {
+    //     verts.push_back(p.X/kPrecision);
+    //     verts.push_back(p.Y/kPrecision);
+    //     indices.push_back(index);
+    //     indices.push_back(index+1);
+    // }
+    // indices.back() = start_index;
 
     draw_tris_->clear();
-    for(ClipperLib::Path &path : sol)
+    // for(ClipperLib::Path &path : sol)
+    for(ClipperLib::PolyNode *pln=sol_tree.GetFirst();pln!=nullptr;pln=pln->GetNext())
     {
-        start_index = index;
+        if(!pln->IsHole()) continue;
+        // start_index = index;
         std::vector<cocos2d::Vec2> shape;
-        for(ClipperLib::IntPoint &p : path)
+        // for(ClipperLib::IntPoint &p : pln->Contour)
+        for(int i=pln->Contour.size()-1; i>=0; i--)
         {
+            auto &p = pln->Contour[i];
             shape.push_back({p.X/kPrecision, p.Y/kPrecision});
-            verts.push_back(p.X/kPrecision);
-            verts.push_back(p.Y/kPrecision);
-            indices.push_back(index);
-            indices.push_back(index+1);
+            // verts.push_back(p.X/kPrecision);
+            // verts.push_back(p.Y/kPrecision);
+            // indices.push_back(index);
+            // indices.push_back(index+1);
         }
-        indices.back() = start_index;
+        // indices.back() = start_index;
         Polygon2D poly(std::move(shape));
         poly.drawTris(draw_tris_);
     }
