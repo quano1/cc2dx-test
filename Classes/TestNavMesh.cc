@@ -27,11 +27,14 @@
 
 #include "TestNavMesh.h"
 #include "SimpleAudioEngine.h"
-// #include "3rdparty/clipper/clipper.hpp"
+#include "3rdparty/clipper/clipper.hpp"
 #include "convex.h"
 #include "utils.h"
 #include "ui/UIRadioButton.h"
 #include "ui/UILayout.h"
+
+#include <Eigen/Core>
+#include <igl/triangle/triangulate.h>
 
 USING_NS_CC;
 
@@ -66,6 +69,8 @@ bool TestNavMesh::init()
     act_layer_->addChild(draw_convex_);
     draw_tris_ = DrawNode::create();
     act_layer_->addChild(draw_tris_);
+    draw_med_ = DrawNode::create();
+    act_layer_->addChild(draw_med_);
 
     debug_text_ = ui::Text::create("",
                                       "fonts/arial.ttf",32);
@@ -139,8 +144,9 @@ void TestNavMesh::initEvents()
                 {
                     draw_convex_->drawPolygon(hull_.data(), hull_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
 
-                    polygons_.push_back(Polygon2D(hull_));
+                    polygons_.push_back(Polygon2D(std::move(hull_)));
                     polygons_.back().drawTris(draw_tris_);
+                    // draw_med_->drawDot(polygons_.back().medPoint(0), 3, cocos2d::Color4F::RED);
                     // draw_tris_->clear();
                     // for(Polygon2D &poly : polygons_) poly.drawTris(draw_tris_);
                 }
@@ -162,7 +168,7 @@ void TestNavMesh::initEvents()
             case KeyCode::KEY_SPACE:
             {
                 // add_mode_ ^= 1;
-                doJob();
+                execute();
             }
             break;
         }
@@ -179,7 +185,79 @@ void TestNavMesh::update(float delta)
     Scene::update(delta);
 }
 
-void TestNavMesh::doJob()
+void TestNavMesh::execute()
 {
+    ClipperLib::Clipper clipper;
+    ClipperLib::Paths sub, clp, sol;
+    ClipperLib::PolyTree sol_tree;
+    const float kPrecision = 10.f;
+    cocos2d::Size const kVisible = cocos2d::Director::getInstance()->getVisibleSize()* kPrecision;
 
+    ClipperLib::PolyFillType pft = ClipperLib::PolyFillType::pftEvenOdd;
+
+    ClipperLib::Path path;
+    path << ClipperLib::IntPoint(0,0);
+    path << ClipperLib::IntPoint(kVisible.width,0);
+    path << ClipperLib::IntPoint(kVisible.width,kVisible.height);
+    path << ClipperLib::IntPoint(0,kVisible.height);
+    sub.push_back(path);
+    /// obstacles
+    for(auto &poly : polygons_)
+    {
+        ClipperLib::Path path;
+        for(auto &p : poly.shape_)
+        {
+            path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
+        }
+        clp.push_back(path);
+    }
+    /// create holes
+    clipper.AddPaths(sub, ClipperLib::PolyType::ptSubject, true);
+    clipper.AddPaths(clp, ClipperLib::PolyType::ptClip, true);
+    clipper.Execute(ClipperLib::ClipType::ctDifference, sol_tree, pft, pft);
+    
+    /// add offset for holes
+    ClipperLib::ClipperOffset co;
+    for(auto pn=sol_tree.GetFirst(); pn; pn=pn->GetNext())
+    {
+        if(pn->IsHole()) co.AddPath(pn->Contour, ClipperLib::JoinType::jtSquare, ClipperLib::EndType::etClosedPolygon);
+    }
+    float const kDelta = 300.f;
+    co.Execute(sol, kDelta);
+    
+    std::vector<float> verts;
+    std::vector<int> indices;
+    verts.reserve(0x1000);
+    ClipperLib::PolyNode* pn = sol_tree.GetFirst();
+    int index=0;
+    int start_index = index;
+    for(ClipperLib::IntPoint &p : pn->Contour)
+    {
+        verts.push_back(p.X/kPrecision);
+        verts.push_back(p.Y/kPrecision);
+        indices.push_back(index);
+        indices.push_back(index+1);
+    }
+    indices.back() = start_index;
+
+    draw_tris_->clear();
+    for(ClipperLib::Path &path : sol)
+    {
+        start_index = index;
+        std::vector<cocos2d::Vec2> shape;
+        for(ClipperLib::IntPoint &p : path)
+        {
+            shape.push_back({p.X/kPrecision, p.Y/kPrecision});
+            verts.push_back(p.X/kPrecision);
+            verts.push_back(p.Y/kPrecision);
+            indices.push_back(index);
+            indices.push_back(index+1);
+        }
+        indices.back() = start_index;
+        Polygon2D poly(std::move(shape));
+        poly.drawTris(draw_tris_);
+    }
+
+
+    /// draw
 }

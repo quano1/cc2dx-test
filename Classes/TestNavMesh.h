@@ -42,7 +42,7 @@ public:
     virtual void update(float) override;
     
     void initEvents();
-    void doJob();
+    void execute();
 
     // implement the "static create()" method manually
     CREATE_FUNC(TestNavMesh);
@@ -60,7 +60,7 @@ private:
 
     cocos2d::DrawNode *draw_debug_, 
                       *draw_convex_, 
-                      *draw_tris_;
+                      *draw_tris_, *draw_med_;
                       
     cocos2d::Layer *debug_layer_,
                     *act_layer_;

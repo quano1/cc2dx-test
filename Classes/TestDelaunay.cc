@@ -250,7 +250,7 @@ void TestDelaunay::initTouchEvent()
         if (touch_points_.empty())
         {
             bool is_removing = false;
-            ::utils::Timer<std::chrono::duration<float,std::micro>> pip1, pip2;
+            ::utils::Timer pip1, pip2;
             float t1=0, t2=0;
             for(decltype(polygons_.rbegin()) it = polygons_.rbegin(); it != polygons_.rend(); it++)
             {
@@ -303,7 +303,7 @@ LOGD("%.2f %.2f", t1, t2);
                 {
                     draw_convex_->drawPolygon(hull_.data(), hull_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
 
-                    polygons_.push_back(Polygon2D(hull_));
+                    polygons_.push_back(Polygon2D(std::move(hull_)));
                     // polygons_.back().tris_ = triangulate<cocos2d::Vec2>(polygons_.back().shape_);
                     drawPolygons();
                 }
