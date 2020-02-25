@@ -60,7 +60,7 @@ private:
 
     cocos2d::DrawNode *draw_debug_, 
                       *draw_convex_, 
-                      *draw_tris_, *draw_med_;
+                      *draw_tris_, *draw_igl_;
                       
     cocos2d::Layer *debug_layer_,
                     *act_layer_;

@@ -38,6 +38,18 @@
 
 USING_NS_CC;
 
+static void drawEigen(cocos2d::DrawNode *dnode, Eigen::Matrix<float,Eigen::Dynamic,2> const &verts, Eigen::Matrix<int, Eigen::Dynamic, 3> const &indices)
+{
+    for(int i=0; i<indices.rows(); i++)
+    {
+        cocos2d::Vec2 a(verts(indices(i,0),0), verts(indices(i,0),1)), 
+                        b(verts(indices(i,1),0), verts(indices(i,1),1)),
+                        c(verts(indices(i,2),0), verts(indices(i,2),1));
+        dnode->drawTriangle(a,b,c,
+            cocos2d::Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
+    }
+}
+
 Scene* TestNavMesh::createScene()
 {
     return TestNavMesh::create();
@@ -67,10 +79,10 @@ bool TestNavMesh::init()
 
     draw_convex_ = DrawNode::create();
     act_layer_->addChild(draw_convex_);
-    draw_tris_ = DrawNode::create();
-    act_layer_->addChild(draw_tris_);
-    draw_med_ = DrawNode::create();
-    act_layer_->addChild(draw_med_);
+    // draw_tris_ = DrawNode::create();
+    // act_layer_->addChild(draw_tris_);
+    draw_igl_ = DrawNode::create();
+    act_layer_->addChild(draw_igl_);
 
     debug_text_ = ui::Text::create("",
                                       "fonts/arial.ttf",32);
@@ -98,14 +110,14 @@ void TestNavMesh::initEvents()
             bool is_removing = false;
             for(decltype(polygons_.rbegin()) it = polygons_.rbegin(); it != polygons_.rend(); it++)
             {
-				bool ret = isPointInPoly(curr_touch, it->shape_); 
-                ret = isPointInConvex<cocos2d::Vec2>(curr_touch, it->shape_);
+				bool ret = isPointInPoly(curr_touch, it->verts_); 
+                ret = isPointInConvex<cocos2d::Vec2>(curr_touch, it->verts_);
                 if(ret)
                 {
                     /// remove
                     polygons_.erase(std::next(it).base());
-                    draw_tris_->clear();
-                    for(Polygon2D &poly : polygons_) poly.drawTris(draw_tris_);
+                    draw_convex_->clear();
+                    for(Polygon2D &poly : polygons_) poly.drawTris(draw_convex_);
                     is_removing = true;
                     break;
                 }
@@ -117,9 +129,9 @@ void TestNavMesh::initEvents()
             }
             else
             {
-                draw_convex_->clear();
-                for(auto &poly : polygons_)
-                    draw_convex_->drawPolygon(poly.shape_.data(), poly.shape_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
+                // draw_convex_->clear();
+                // for(auto &poly : polygons_)
+                //     draw_convex_->drawPolygon(poly.verts_.data(), poly.verts_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
             }
         }
         else /// add point or complete convex
@@ -142,11 +154,11 @@ void TestNavMesh::initEvents()
                 /// complete convex
                 if(hull_.size() > 2)
                 {
-                    draw_convex_->drawPolygon(hull_.data(), hull_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
+                    // draw_convex_->drawPolygon(hull_.data(), hull_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
 
                     polygons_.push_back(Polygon2D(std::move(hull_)));
-                    polygons_.back().drawTris(draw_tris_);
-                    // draw_med_->drawDot(polygons_.back().medPoint(0), 3, cocos2d::Color4F::RED);
+                    polygons_.back().drawTris(draw_convex_);
+                    // draw_igl_->drawDot(polygons_.back().medPoint(0), 3, cocos2d::Color4F::RED);
                     // draw_tris_->clear();
                     // for(Polygon2D &poly : polygons_) poly.drawTris(draw_tris_);
                 }
@@ -192,7 +204,6 @@ void TestNavMesh::execute()
     ClipperLib::PolyTree sol_tree;
     const float kPrecision = 10.f;
     cocos2d::Size const kVisible = cocos2d::Director::getInstance()->getVisibleSize()* kPrecision;
-
     ClipperLib::PolyFillType pft = ClipperLib::PolyFillType::pftEvenOdd;
 
     ClipperLib::Path path;
@@ -201,14 +212,26 @@ void TestNavMesh::execute()
     path << ClipperLib::IntPoint(kVisible.width,kVisible.height);
     path << ClipperLib::IntPoint(0,kVisible.height);
     sub.push_back(path);
-    /// obstacles
+
+    /// Eigen
+    std::vector<float> verts_data;
+    std::vector<int> indices_data;
+    std::vector<float> obs_data;
+    verts_data.reserve(0x1000);
+    indices_data.reserve(0x1000);
+    obs_data.reserve(0x100);
+
+    /// obstacles - holes
     ClipperLib::ClipperOffset co;
+    // size_t nvert=0;
     for(auto &poly : polygons_)
     {
         ClipperLib::Path path;
-        for(auto &p : poly.shape_)
+        obs_data.push_back(poly.med_.x);
+        obs_data.push_back(poly.med_.y);
+        for(auto &vert : poly.verts_)
         {
-            path << ClipperLib::IntPoint(p.x* kPrecision, p.y * kPrecision);
+            path << ClipperLib::IntPoint(vert.x* kPrecision, vert.y * kPrecision);
         }
         co.AddPath(path, ClipperLib::JoinType::jtSquare, ClipperLib::EndType::etClosedPolygon);
     }
@@ -221,45 +244,50 @@ void TestNavMesh::execute()
     clipper.AddPaths(clp, ClipperLib::PolyType::ptClip, true);
     clipper.Execute(ClipperLib::ClipType::ctDifference, sol_tree, pft, pft);
     
-
-    // std::vector<float> verts;
-    // std::vector<int> indices;
-    // verts.reserve(0x1000);
-    // indices.reserve(0x1000);
-    // ClipperLib::PolyNode* pn = sol_tree.GetFirst();
-    // int index=0;
-    // int start_index = index;
-    // for(ClipperLib::IntPoint &p : pn->Contour)
-    // {
-    //     verts.push_back(p.X/kPrecision);
-    //     verts.push_back(p.Y/kPrecision);
-    //     indices.push_back(index);
-    //     indices.push_back(index+1);
-    // }
-    // indices.back() = start_index;
-
-    draw_tris_->clear();
-    // for(ClipperLib::Path &path : sol)
+    int index=0;
     for(ClipperLib::PolyNode *pln=sol_tree.GetFirst();pln!=nullptr;pln=pln->GetNext())
     {
-        if(!pln->IsHole()) continue;
-        // start_index = index;
-        std::vector<cocos2d::Vec2> shape;
         // for(ClipperLib::IntPoint &p : pln->Contour)
-        for(int i=pln->Contour.size()-1; i>=0; i--)
+        int start_index = index;
+        if(pln->IsHole())
         {
-            auto &p = pln->Contour[i];
-            shape.push_back({p.X/kPrecision, p.Y/kPrecision});
-            // verts.push_back(p.X/kPrecision);
-            // verts.push_back(p.Y/kPrecision);
-            // indices.push_back(index);
-            // indices.push_back(index+1);
+            /// revert order
+            for(int i=pln->Contour.size()-1; i>=0; i--)
+            {
+                verts_data.push_back(pln->Contour[i].X/kPrecision);
+                verts_data.push_back(pln->Contour[i].Y/kPrecision);
+                indices_data.push_back(index);
+                indices_data.push_back(index+1);
+                index++;
+            }
         }
-        // indices.back() = start_index;
-        Polygon2D poly(std::move(shape));
-        poly.drawTris(draw_tris_);
+        else
+        {
+            /// cc wise
+            for(int i=0; i<pln->Contour.size(); i++)
+            {
+                verts_data.push_back(pln->Contour[i].X/kPrecision);
+                verts_data.push_back(pln->Contour[i].Y/kPrecision);
+                indices_data.push_back(index);
+                indices_data.push_back(index+1);
+                index++;
+            }
+        }
+        indices_data.back() = start_index;
     }
 
+    /// construct eigen
+    Eigen::MatrixXf verts_mat = Eigen::Map<Eigen::Matrix<float,Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(verts_data.data(), verts_data.size()/2, 2);
+    Eigen::MatrixXi indices_mat = Eigen::Map<Eigen::Matrix<int,Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(indices_data.data(), indices_data.size()/2, 2);
+    Eigen::MatrixXf obs_mat = Eigen::Map<Eigen::Matrix<float,Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(obs_data.data(), obs_data.size()/2, 2);
+    
+    Eigen::MatrixXf V2;
+    Eigen::MatrixXi F2;
+    std::string flag = std::string("a") + std::to_string((kVisible.width/kPrecision * kVisible.height/kPrecision) / 4);
+    igl::triangle::triangulate(verts_mat,indices_mat,obs_mat,flag.data(),V2,F2);
 
-    /// draw
+    draw_igl_->clear();
+    /// draw triangulate
+    drawEigen(draw_igl_, V2, F2);
 }
+

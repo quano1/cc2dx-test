@@ -118,7 +118,7 @@ bool TestDelaunay::doRecast()
             /// update RC_NULL_AREA spans
             for(auto &poly : polygons_)
             {
-                if(isPointInPoly({(float)x,(float)y}, poly.shape_))
+                if(isPointInPoly({(float)x,(float)y}, poly.verts_))
                 {
                     m_solid->spans[x + y*m_cfg.width]->area = RC_NULL_AREA;
                 }
@@ -254,10 +254,10 @@ void TestDelaunay::initTouchEvent()
             float t1=0, t2=0;
             for(decltype(polygons_.rbegin()) it = polygons_.rbegin(); it != polygons_.rend(); it++)
             {
-                // if(pointInPoly2D(it->shape_, curr_touch))
-                pip1.reset();isPointInPoly(curr_touch, it->shape_); t1+=pip1.elapse();
+                // if(pointInPoly2D(it->verts_, curr_touch))
+                pip1.reset();isPointInPoly(curr_touch, it->verts_); t1+=pip1.elapse();
                 pip2.reset();
-                bool ret = isPointInConvex<cocos2d::Vec2>(curr_touch, it->shape_); t2+=pip2.elapse();
+                bool ret = isPointInConvex<cocos2d::Vec2>(curr_touch, it->verts_); t2+=pip2.elapse();
                 if(ret)
                 {
                     /// remove
@@ -277,7 +277,7 @@ LOGD("%.2f %.2f", t1, t2);
             {
                 draw_convex_->clear();
                 for(auto &poly : polygons_)
-                    draw_convex_->drawPolygon(poly.shape_.data(), poly.shape_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
+                    draw_convex_->drawPolygon(poly.verts_.data(), poly.verts_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
             }
         }
         else /// add point or complete convex
@@ -304,7 +304,7 @@ LOGD("%.2f %.2f", t1, t2);
                     draw_convex_->drawPolygon(hull_.data(), hull_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
 
                     polygons_.push_back(Polygon2D(std::move(hull_)));
-                    // polygons_.back().tris_ = triangulate<cocos2d::Vec2>(polygons_.back().shape_);
+                    // polygons_.back().tris_ = triangulate<cocos2d::Vec2>(polygons_.back().verts_);
                     drawPolygons();
                 }
             }

@@ -19,7 +19,7 @@ public:
     void fromEigen(Eigen::MatrixXf const &v);
     std::tuple<cocos2d::Vec2&, cocos2d::Vec2&, cocos2d::Vec2&> triangle(size_t idx);
 
-    std::vector<cocos2d::Vec2> shape_;              //< points
+    std::vector<cocos2d::Vec2> verts_;              //< points
     cocos2d::Vec2 med_; //< median points
     cocos2d::Vec2 bmin_, bmax_; //< bounding box
     std::vector<int> tris_; //< triangles

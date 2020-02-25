@@ -344,12 +344,14 @@
 /* Define the size large enough to store and operate on a pointer.           */
 #define INT_PTR unsigned long long
 
+#define NO_TIMER
+#define TRILIBRARY
+#define ANSI_DECLARATORS
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#define NO_TIMER
 #ifndef NO_TIMER
 #include <sys/time.h>
 #endif /* not NO_TIMER */
