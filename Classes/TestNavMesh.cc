@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 
 #include "TestNavMesh.h"
 #include "SimpleAudioEngine.h"
@@ -35,6 +36,7 @@
 
 #include <Eigen/Core>
 #include <igl/triangle/triangulate.h>
+#include <igl/AABB.h>
 
 USING_NS_CC;
 
@@ -79,8 +81,8 @@ bool TestNavMesh::init()
 
     draw_convex_ = DrawNode::create();
     act_layer_->addChild(draw_convex_);
-    // draw_tris_ = DrawNode::create();
-    // act_layer_->addChild(draw_tris_);
+    draw_tris_ = DrawNode::create();
+    act_layer_->addChild(draw_tris_);
     draw_igl_ = DrawNode::create();
     act_layer_->addChild(draw_igl_);
 
@@ -110,7 +112,7 @@ void TestNavMesh::initEvents()
             bool is_removing = false;
             for(decltype(polygons_.rbegin()) it = polygons_.rbegin(); it != polygons_.rend(); it++)
             {
-				bool ret = isPointInPoly(curr_touch, it->verts_); 
+                bool ret = isPointInPoly(curr_touch, it->verts_); 
                 ret = isPointInConvex<cocos2d::Vec2>(curr_touch, it->verts_);
                 if(ret)
                 {
@@ -215,10 +217,10 @@ void TestNavMesh::execute()
 
     /// Eigen
     std::vector<float> verts_data;
-    std::vector<int> indices_data;
+    std::vector<int> elems_data;
     std::vector<float> obs_data;
     verts_data.reserve(0x1000);
-    indices_data.reserve(0x1000);
+    elems_data.reserve(0x1000);
     obs_data.reserve(0x100);
 
     /// obstacles - holes
@@ -233,9 +235,9 @@ void TestNavMesh::execute()
         {
             path << ClipperLib::IntPoint(vert.x* kPrecision, vert.y * kPrecision);
         }
-        co.AddPath(path, ClipperLib::JoinType::jtSquare, ClipperLib::EndType::etClosedPolygon);
+        co.AddPath(path, ClipperLib::JoinType::jtMiter, ClipperLib::EndType::etClosedPolygon);
     }
-    float const kDelta = 300.f;
+    float const kDelta = 150.f;
     /// clp = obstacles + offset
     co.Execute(clp, kDelta);
 
@@ -256,38 +258,51 @@ void TestNavMesh::execute()
             {
                 verts_data.push_back(pln->Contour[i].X/kPrecision);
                 verts_data.push_back(pln->Contour[i].Y/kPrecision);
-                indices_data.push_back(index);
-                indices_data.push_back(index+1);
+                elems_data.push_back(index);
+                elems_data.push_back(index+1);
                 index++;
             }
         }
         else
         {
             /// cc wise
-            for(int i=0; i<pln->Contour.size(); i++)
+            for(size_t i=0; i<pln->Contour.size(); i++)
             {
                 verts_data.push_back(pln->Contour[i].X/kPrecision);
                 verts_data.push_back(pln->Contour[i].Y/kPrecision);
-                indices_data.push_back(index);
-                indices_data.push_back(index+1);
+                elems_data.push_back(index);
+                elems_data.push_back(index+1);
                 index++;
             }
         }
-        indices_data.back() = start_index;
+        elems_data.back() = start_index;
     }
 
     /// construct eigen
     Eigen::MatrixXf verts_mat = Eigen::Map<Eigen::Matrix<float,Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(verts_data.data(), verts_data.size()/2, 2);
-    Eigen::MatrixXi indices_mat = Eigen::Map<Eigen::Matrix<int,Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(indices_data.data(), indices_data.size()/2, 2);
+    Eigen::MatrixXi elems_mat = Eigen::Map<Eigen::Matrix<int,Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(elems_data.data(), elems_data.size()/2, 2);
     Eigen::MatrixXf obs_mat = Eigen::Map<Eigen::Matrix<float,Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >(obs_data.data(), obs_data.size()/2, 2);
     
     Eigen::MatrixXf V2;
     Eigen::MatrixXi F2;
-    std::string flag = std::string("a") + std::to_string((kVisible.width/kPrecision * kVisible.height/kPrecision) / 4);
-    igl::triangle::triangulate(verts_mat,indices_mat,obs_mat,flag.data(),V2,F2);
+    std::string flag = std::string("a") + std::to_string((kVisible.width/kPrecision * kVisible.height/kPrecision) / 4) + "q";
+    igl::triangle::triangulate(verts_mat,elems_mat,obs_mat,flag.data(),V2,F2);
 
-    draw_igl_->clear();
+    draw_tris_->clear();
     /// draw triangulate
-    drawEigen(draw_igl_, V2, F2);
+    drawEigen(draw_tris_, V2, F2);
+
+    igl::AABB<Eigen::MatrixXf, 2> tree;
+    tree.init(V2, F2);
+    // Eigen::Matrix<float,1,2> qp((kVisible.width / kPrecision) / 2, 10);
+    // std::vector<int> found = tree.find(V2,F2,qp);
+    // LOGD("%d", found.back());
+    // std::stringstream ss;
+    // ss << F2 << std::endl;
+    // LOGD("%s", ss.str().data());
+    // // ss.str(""); 
+    // ss.clear();
+    // ss << V2 << std::endl;
+    // LOGD("%s", ss.str().data());
 }
 

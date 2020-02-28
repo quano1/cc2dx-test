@@ -48,7 +48,7 @@ void Polygon2D::drawTris(cocos2d::DrawNode *dnode)
     // dnode->drawRect(this->bmin_, this->bmax_, cocos2d::Color4F(CCRANDOM_0_1(), CCRANDOM_0_1(), CCRANDOM_0_1(), 0.5));
     // dnode->drawDot(med_, 5, cocos2d::Color4F::RED);
 
-    dnode->drawPolygon(this->verts_.data(), this->verts_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::WHITE);
+    dnode->drawPolygon(this->verts_.data(), this->verts_.size(), cocos2d::Color4F(), 2, cocos2d::Color4F::RED);
 }
 
 cocos2d::Vec2 Polygon2D::ranPoint(size_t idx)

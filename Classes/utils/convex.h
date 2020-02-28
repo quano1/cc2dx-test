@@ -41,7 +41,7 @@ inline bool isPointInTri(const V &p, const V &a, const V &b, const V &c)
 template <typename V>
 inline bool isPointInConvex(const V &p, const std::vector<V> &poly)
 {
-    for(int i=0; i<poly.size()-2; i++)
+    for(size_t i=0; i<poly.size()-2; i++)
     {
         if(isPointInTri(p, poly[0], poly[i+1], poly[i+2]))
             return true;
