@@ -44,12 +44,14 @@ static void drawConvexs(cocos2d::DrawNode *draw, std::list<std::vector<cocos2d::
 
 Scene* TestClipper::createScene()
 {
+    TLL_GLOGTF();
     return TestClipper::create();
 }
 
 // on "init" you need to initialize your instance
 bool TestClipper::init()
 {
+    TLL_GLOGTF();
     //////////////////////////////
     // 1. super init first
     if ( !Scene::init() )
@@ -176,6 +178,7 @@ bool TestClipper::init()
 
 void TestClipper::initEvents()
 {
+    TLL_GLOGTF();
     EventListenerTouchAllAtOnce *listener = EventListenerTouchAllAtOnce::create();
     prev_touch_ = cocos2d::Vec2::ZERO;
     /// pressed event
@@ -351,6 +354,7 @@ void TestClipper::update(float delta)
 
 void TestClipper::doJob()
 {
+    TLL_GLOGTF();
     cocos2d::Size const kVisible = cocos2d::Director::getInstance()->getVisibleSize();
     // draw_delau_tri_->clear();
     if(!poly_list_.size()) return;
@@ -391,6 +395,7 @@ void TestClipper::doJob()
 
 void TestClipper::updateDebugText()
 {
+    TLL_GLOGTF();
     std::string str;
     switch(poly_type_/*%static_cast<int>(ClipperLib::PolyType::ptClip)*/)
     {
@@ -488,6 +493,7 @@ void TestClipper::updateDebugText()
 
 void TestClipper::executeClipper()
 {
+    TLL_GLOGTF();
     ClipperLib::Clipper clipper;
     // ClipperLib::Clipper c;
     ClipperLib::Paths sub, clp, sol;
@@ -546,6 +552,7 @@ void TestClipper::executeClipper()
 
 void TestClipper::reDrawConvexs(int type)
 {
+    TLL_GLOGTF();
     draw_convex_s_[type]->clear();
     drawConvexs(draw_convex_s_[type], clip_paths_[type], colors_[type]);
 

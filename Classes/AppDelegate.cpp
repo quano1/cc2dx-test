@@ -26,6 +26,9 @@
 #include "MainScene.h"
 #include "TestDelaunay.h"
 #include "TestClipper.h"
+#include "logger.h"
+
+tll::Logger<0x400, 0x1000, 1000> *plogger;
 
 // #define USE_AUDIO_ENGINE 1
 // #define USE_SIMPLE_AUDIO_ENGINE 1
@@ -49,10 +52,17 @@ static cocos2d::Size mediumResolutionSize = cocos2d::Size(1024, 768);
 static cocos2d::Size largeResolutionSize = cocos2d::Size(2048, 1536);
 static cocos2d::Size currentReso = cocos2d::Size(3480, 2160);
 
-static cocos2d::Size designResolutionSize = currentReso * 0.8;
+static cocos2d::Size designResolutionSize = currentReso * 0.8f;
 
 AppDelegate::AppDelegate()
 {
+    plogger = new tll::Logger<0x400, 0x1000, 1000>(tll::LogEntity{tll::mask::all, 
+                [](){return static_cast<void*>(new std::ofstream("cc2dx.prj.log", std::ios::out | std::ios::binary));}, 
+                [](void *handle){delete static_cast<std::ofstream*>(handle);},
+                [&](void *handle, const char *buff, size_t size){
+                    static_cast<std::ofstream*>(handle)->write((const char *)buff, size);
+                    static_cast<std::ofstream*>(handle)->flush();
+                }, 0x10000, nullptr});
 }
 
 AppDelegate::~AppDelegate() 
@@ -63,6 +73,7 @@ AppDelegate::~AppDelegate()
     SimpleAudioEngine::end();
 #endif
     if(main_scene_) delete main_scene_;
+    delete plogger;
 }
 
 // if you want a different context, modify the value of glContextAttrs
@@ -88,6 +99,7 @@ static int register_all_packages()
 bool AppDelegate::applicationDidFinishLaunching() {
     // initialize director
     auto director = Director::getInstance();
+    
     auto glview = director->getOpenGLView();
     if(!glview) {
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_WIN32) || (CC_TARGET_PLATFORM == CC_PLATFORM_MAC) || (CC_TARGET_PLATFORM == CC_PLATFORM_LINUX)
@@ -101,6 +113,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
         director->setOpenGLView(glview);
     }
 
+    TLL_GLOGTF();
     // turn on display FPS
     director->setDisplayStats(true);
 

@@ -12,6 +12,7 @@ static const float kBtnHeight = 60.f;
 
 Scene* MainScene::createScene()
 {
+    TLL_GLOGTF();
     return MainScene::create();
 }
 
@@ -25,6 +26,7 @@ static void problemLoading(const char* filename)
 /// on "init" you need to initialize your instance
 bool MainScene::init()
 {
+    TLL_GLOGTF();
     //////////////////////////////
     // 1. super init first
     if ( !Scene::init() )
@@ -58,6 +60,7 @@ bool MainScene::init()
 
 void MainScene::addAllScene()
 {
+    TLL_GLOGTF();
     // for(int i=0; i<50; i++)
     {
         addScene<TestDelaunay>("Test Delaunay");

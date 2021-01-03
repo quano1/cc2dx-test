@@ -26,6 +26,9 @@
 #define  _APP_DELEGATE_H_
 
 #include "cocos2d.h"
+#include "logger.h"
+
+extern tll::Logger<0x400, 0x1000, 1000> *plogger;
 
 /**
 @brief    The cocos2d Application.

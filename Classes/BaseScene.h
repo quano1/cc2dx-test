@@ -1,6 +1,8 @@
 #pragma once
 
 #include "cocos2d.h"
+#include "logger.h"
+extern tll::Logger<0x400, 0x1000, 1000> *plogger;
 
 template<class T>
 constexpr const T& wrap( const T& v, const T& lo, const T& hi )

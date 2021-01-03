@@ -27,6 +27,9 @@
 #include "cocos2d.h"
 #include <ui/CocosGUI.h>
 
+#include "logger.h"
+extern tll::Logger<0x400, 0x1000, 1000> *plogger;
+
 class MainScene : public cocos2d::Scene
 {
 public:
@@ -60,6 +63,7 @@ private:
 template <class S>
 void MainScene::addScene(const std::string &scene_name)
 {
+    TLL_GLOGTF();
     using namespace cocos2d;
     using namespace cocos2d::ui;
     const auto kVisible = cocos2d::Director::getInstance()->getVisibleSize();

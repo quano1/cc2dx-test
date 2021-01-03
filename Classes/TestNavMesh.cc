@@ -30,7 +30,6 @@
 #include "SimpleAudioEngine.h"
 #include "3rdparty/clipper/clipper.hpp"
 #include "convex.h"
-#include "utils.h"
 #include "ui/UIRadioButton.h"
 #include "ui/UILayout.h"
 
@@ -54,12 +53,14 @@ static void drawEigen(cocos2d::DrawNode *dnode, Eigen::Matrix<float,Eigen::Dynam
 
 Scene* TestNavMesh::createScene()
 {
+    TLL_GLOGTF();
     return TestNavMesh::create();
 }
 
 // on "init" you need to initialize your instance
 bool TestNavMesh::init()
 {
+    TLL_GLOGTF();
     //////////////////////////////
     // 1. super init first
     if ( !Scene::init() )
@@ -100,6 +101,7 @@ bool TestNavMesh::init()
 
 void TestNavMesh::initEvents()
 {
+    TLL_GLOGTF();
     EventListenerTouchAllAtOnce *listener = EventListenerTouchAllAtOnce::create();
     prev_touch_ = cocos2d::Vec2::ZERO;
     /// pressed event
@@ -201,6 +203,7 @@ void TestNavMesh::update(float delta)
 
 void TestNavMesh::execute()
 {
+    TLL_GLOGTF();
     ClipperLib::Clipper clipper;
     ClipperLib::Paths sub, clp, sol;
     ClipperLib::PolyTree sol_tree;

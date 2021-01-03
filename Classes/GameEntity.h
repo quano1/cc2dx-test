@@ -1,5 +1,5 @@
 #include <cocos2d.h>
-#include "SimpleSignal.h"
+#include "logger.h"
 
 class BaseEntity
 {

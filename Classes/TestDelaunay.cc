@@ -33,18 +33,20 @@
 #include "recast/Recast/Recast.h"
 // #include "3rdparty/clipper/clipper.hpp"
 #include "Poly2D.h"
-#include "utils.h"
+#include "logger.h"
 
 USING_NS_CC;
 
 Scene* TestDelaunay::createScene()
 {
+    TLL_GLOGTF();
     return TestDelaunay::create();
 }
 
 // on "init" you need to initialize your instance
 bool TestDelaunay::init()
 {
+    TLL_GLOGTF();
     //////////////////////////////
     // 1. super init first
     if ( !Scene::init() )
@@ -69,6 +71,7 @@ bool TestDelaunay::init()
 
 void TestDelaunay::drawPolygons()
 {
+    TLL_GLOGTF();
     draw_delau_tri_->clear();
     for(Polygon2D &poly : polygons_)
     {
@@ -78,6 +81,7 @@ void TestDelaunay::drawPolygons()
 
 bool TestDelaunay::doRecast()
 {
+    TLL_GLOGTF();
     static cocos2d::Size const kVisible = cocos2d::Director::getInstance()->getVisibleSize();
 
     m_cfg.cs = 10;
@@ -239,18 +243,18 @@ bool TestDelaunay::doRecast()
 
 void TestDelaunay::initTouchEvent()
 {
+    TLL_GLOGTF();
     EventListenerTouchAllAtOnce *listener = EventListenerTouchAllAtOnce::create();
     prev_touch_ = cocos2d::Vec2::ZERO;
     /// pressed event
     listener->onTouchesBegan = [=] (const std::vector<Touch*>& touches, Event *pEvent) mutable
     {
-        TRACE();
         cocos2d::Vec2 curr_touch = touches[0]->getLocation();
         /// remove or start a convex
         if (touch_points_.empty())
         {
             bool is_removing = false;
-            ::utils::Timer pip1, pip2;
+            tll::utils::Timer pip1, pip2;
             float t1=0, t2=0;
             for(decltype(polygons_.rbegin()) it = polygons_.rbegin(); it != polygons_.rend(); it++)
             {
@@ -267,7 +271,6 @@ void TestDelaunay::initTouchEvent()
                     break;
                 }
             }
-LOGD("%.2f %.2f", t1, t2);
             if(!is_removing)
             {
                 touch_points_.push_back(curr_touch);
@@ -366,6 +369,7 @@ LOGD("%.2f %.2f", t1, t2);
 
 void TestDelaunay::update(float delta)
 {
+    TLL_GLOGTF();
     Scene::update(delta);
 }
 
