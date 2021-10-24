@@ -1,0 +1,24 @@
+diff --git a/include/chipmunk/chipmunk.h b/include/chipmunk/chipmunk.h
+index 1c204ab..d7faf03 100644
+--- a/include/chipmunk/chipmunk.h
++++ b/include/chipmunk/chipmunk.h
+@@ -128,6 +128,7 @@ typedef struct cpSpace cpSpace;
+ #include "cpConstraint.h"
+ 
+ #include "cpSpace.h"
++#include "cpHastySpace.h"
+ 
+ // Chipmunk 7.0.1
+ #define CP_VERSION_MAJOR 7
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index ef6706d..b3f2a34 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -45,6 +45,7 @@ if(BUILD_STATIC)
+     set_target_properties(chipmunk_static PROPERTIES LINKER_LANGUAGE CXX)
+   endif(MSVC)
+   # Sets chipmunk_static to output "libchipmunk.a" not "libchipmunk_static.a"
++  target_include_directories(chipmunk_static PUBLIC ${chipmunk_SOURCE_DIR}/include)
+   set_target_properties(chipmunk_static PROPERTIES OUTPUT_NAME chipmunk)
+   if(INSTALL_STATIC)
+     install(TARGETS chipmunk_static ARCHIVE DESTINATION ${LIB_INSTALL_DIR})

@@ -1,0 +1,9 @@
+
+thirdparty
+
+.build*
+.install*
+
+prog.out
+
+cocos-project
