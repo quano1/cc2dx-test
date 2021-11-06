@@ -25,85 +25,63 @@
 
 cmake_minimum_required(VERSION 3.21)
 
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-set(CMAKE_POLICY_DEFAULT_CMP0072 NEW)
+# set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+# set(CMAKE_POLICY_DEFAULT_CMP0072 NEW)
 
 set(APP_NAME cc2dx_test)
 
 project(${APP_NAME})
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
-include(DownloadProject)
+# list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+# include(DownloadProject)
 
 set(THIRDPARTY ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)
-function(download_thirdparty name)
-    download_project(
-                    PROJ                ${name}
-                    SOURCE_DIR "${THIRDPARTY}/${name}"
-                    DOWNLOAD_DIR "${THIRDPARTY}/.cache/${name}"
-                    QUIET
-                    TLS_VERIFY OFF
-                    ${ARGN}
-    )
-endfunction()
 
-# download_thirdparty(recastnav
-#     GIT_REPOSITORY      https://github.com/recastnavigation/recastnavigation
-#     GIT_TAG             master)
-# set(RECASTNAVIGATION_DEMO           OFF CACHE BOOL "" FORCE)
-# set(RECASTNAVIGATION_TESTS          OFF CACHE BOOL "" FORCE)
-# add_subdirectory(${THIRDPARTY}/recastnav)
+option(LIBIGL_WITH_TRIANGLE           "" ON)
+option(LIBIGL_USE_STATIC_LIBRARY      "" OFF)
+option(LIBIGL_WITH_CGAL               "" OFF)
+option(LIBIGL_WITH_COMISO             "" OFF)
+option(LIBIGL_WITH_CORK               "" OFF)
+option(LIBIGL_WITH_EMBREE             "" OFF)
+option(LIBIGL_WITH_MATLAB             "" OFF)
+option(LIBIGL_WITH_MOSEK              "" OFF)
+option(LIBIGL_WITH_OPENGL             "" OFF)
+option(LIBIGL_WITH_OPENGL_GLFW        "" OFF)
+option(LIBIGL_WITH_OPENGL_GLFW_IMGUI  "" OFF)
+option(LIBIGL_WITH_PNG                "" OFF)
+option(LIBIGL_WITH_TETGEN             "" OFF)
+option(LIBIGL_WITH_PREDICATES         "" OFF)
+option(LIBIGL_WITH_XML                "" OFF)
+option(LIBIGL_WITHOUT_COPYLEFT        "" OFF)
+option(LIBIGL_EXPORT_TARGETS          "" OFF)
+option(LIBIGL_BUILD_TESTS             "" OFF)
+option(LIBIGL_BUILD_TUTORIALS         "" OFF)
 
-download_thirdparty(delaunator
-    GIT_REPOSITORY https://github.com/delfrrr/delaunator-cpp
-    GIT_TAG master)
+list(APPEND CMAKE_MODULE_PATH "${THIRDPARTY}/libigl/cmake")
+include(libigl)
 
-download_thirdparty(libigl
-    GIT_REPOSITORY      https://github.com/libigl/libigl
-    GIT_TAG             v2.3.0)
+# download_thirdparty(chipmunk
+#     GIT_REPOSITORY https://github.com/slembcke/Chipmunk2D
+#     GIT_TAG Chipmunk-7.0.1)
 
-set(LIBIGL_WITH_TRIANGLE             ON CACHE BOOL "" FORCE)
-set(LIBIGL_USE_STATIC_LIBRARY        OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_CGAL                 OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_COMISO               OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_CORK                 OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_EMBREE               OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_MATLAB               OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_MOSEK                OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_OPENGL               OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_OPENGL_GLFW          OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_OPENGL_GLFW_IMGUI    OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_PNG                  OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_TETGEN               OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_PREDICATES           OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITH_XML                  OFF CACHE BOOL "" FORCE)
-set(LIBIGL_WITHOUT_COPYLEFT          OFF CACHE BOOL "" FORCE)
-set(LIBIGL_EXPORT_TARGETS            OFF CACHE BOOL "" FORCE)
-set(LIBIGL_BUILD_TESTS               OFF CACHE BOOL "" FORCE)
-set(LIBIGL_BUILD_TUTORIALS           OFF CACHE BOOL "" FORCE)
-add_subdirectory(${THIRDPARTY}/libigl)
+#     PATCH_COMMAND git apply ${CMAKE_CURRENT_SOURCE_DIR}/patch/Chipmunk-7.0.1_cocos.patch)
 
-download_thirdparty(chipmunk
-    GIT_REPOSITORY https://github.com/slembcke/Chipmunk2D
-    GIT_TAG Chipmunk-7.0.1
-    PATCH_COMMAND git apply ${CMAKE_CURRENT_SOURCE_DIR}/patch/Chipmunk-7.0.1_cocos.patch)
-
-set(BUILD_DEMOS                     OFF CACHE BOOL "" FORCE)
-set(INSTALL_DEMOS                   OFF CACHE BOOL "" FORCE)
-set(BUILD_SHARED                    OFF CACHE BOOL "" FORCE)
-set(BUILD_STATIC                    ON CACHE BOOL "" FORCE)
-set(INSTALL_STATIC                  ON CACHE BOOL "" FORCE)
-add_subdirectory(${THIRDPARTY}/chipmunk)
+# set(BUILD_DEMOS                     OFF CACHE BOOL "" FORCE)
+# set(INSTALL_DEMOS                   OFF CACHE BOOL "" FORCE)
+# set(BUILD_SHARED                    OFF CACHE BOOL "" FORCE)
+# set(BUILD_STATIC                    ON CACHE BOOL "" FORCE)
+# set(INSTALL_STATIC                  ON CACHE BOOL "" FORCE)
+# add_subdirectory(${THIRDPARTY}/chipmunk)
 
 # download_thirdparty(cocos
 #     GIT_REPOSITORY      https://github.com/cocos2d/cocos2d-x
 #     GIT_TAG             v4)
 
-set(BUILD_SHARED_LIBS               OFF CACHE BOOL "" FORCE)
-download_thirdparty(clipper
-    GIT_REPOSITORY      https://github.com/Geri-Borbas/Clipper
-    GIT_TAG             master)
-add_subdirectory(${THIRDPARTY}/clipper/cpp)
+# set(BUILD_SHARED_LIBS               OFF CACHE BOOL "" FORCE)
+# download_thirdparty(clipper
+#     GIT_REPOSITORY      https://github.com/Geri-Borbas/Clipper
+#     GIT_TAG             master)
+# add_subdirectory(${THIRDPARTY}/clipper/cpp)
 
 
 set(BUILD_EXT_CHIPMUNK OFF CACHE BOOL "" FORCE)
@@ -116,11 +94,11 @@ set(BUILD_EXT_CLIPPER OFF CACHE BOOL "" FORCE)
 set(COCOS2DX_PROJECT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cocos-project)
 # add_subdirectory(${COCOS2DX_PROJECT_PATH}/cocos2d)
 
-link_libraries(
-    chipmunk_static
-#     RecastNavigation::Detour RecastNavigation::DebugUtils RecastNavigation::DetourCrowd RecastNavigation::DetourTileCache RecastNavigation::Recast
-    polyclipping
-)
+# link_libraries(
+#     chipmunk
+# #     RecastNavigation::Detour RecastNavigation::DebugUtils RecastNavigation::DetourCrowd RecastNavigation::DetourTileCache RecastNavigation::Recast
+#     polyclipping
+# )
 
 # include_directories(
 #     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/chipmunk/include
@@ -232,9 +210,10 @@ endif()
 target_link_libraries(${APP_NAME} PRIVATE
     cocos2d
     igl::core igl::triangle
-    # clipper
-    # delaunator
+    chipmunk
+    polyclipping
     ext_recast
+    # delaunator
 )
 
 target_compile_features(${APP_NAME} PUBLIC cxx_std_17)
