@@ -100,9 +100,19 @@ set(COCOS2DX_PROJECT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cocos-project)
 #     polyclipping
 # )
 
-# include_directories(
-#     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/chipmunk/include
+# add_library(thirdparty IMPORTED) # or STATIC instead of SHARED
+# set_target_properties(thirdparty PROPERTIES
+#   IMPORTED_LOCATION "${CMAKE_INSTALL_PREFIX}/lib"
+#   INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include"
 # )
+
+find_library(CHIPMUNK NAMES chipmunk PATHS ${CMAKE_INSTALL_PREFIX}/lib REQUIRED)
+find_library(POLYCLIPPING NAMES polyclipping PATHS ${CMAKE_INSTALL_PREFIX}/lib REQUIRED)
+
+include_directories(
+#     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/chipmunk/include
+    ${CMAKE_INSTALL_PREFIX}/include
+)
 
 if(XCODE)
     if(NOT DEFINED CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET)
@@ -191,6 +201,8 @@ set(all_code_files
     ${GAME_SOURCE}
     )
 if(NOT ANDROID)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
     add_executable(${APP_NAME} ${all_code_files})
 else()
     add_library(${APP_NAME} SHARED ${all_code_files})
@@ -210,8 +222,8 @@ endif()
 target_link_libraries(${APP_NAME} PRIVATE
     cocos2d
     igl::core igl::triangle
-    chipmunk
-    polyclipping
+    ${CHIPMUNK}
+    ${POLYCLIPPING}
     ext_recast
     # delaunator
 )

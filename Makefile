@@ -1,13 +1,13 @@
 all: configure prog.out
 	@echo target: $@
 
-ifeq ($(V), 1)
+# ifeq ($(V), 1)
 CMAKE := cmake
 RM := rm
-else
-CMAKE := @cmake
-RM := @rm
-endif
+# else
+# CMAKE := @cmake
+# RM := @rm
+# endif
 
 configure: | .build
 	@echo target: $@
@@ -35,10 +35,10 @@ thirdparty-clone:
 	fi;
 
 thirdparty-install: thirdparty-clone
-	cmake -S thirdparty/chipmunk -GNinja -B.thirdparty/chipmunk -DBUILD_DEMOS=OFF -DINSTALL_DEMOS=OFF -DBUILD_SHARED=OFF -DBUILD_STATIC=ON -DINSTALL_STATIC=ON -DCMAKE_INSTALL_PREFIX:PATH=.install
+	cmake -S thirdparty/chipmunk -GNinja -B.thirdparty/chipmunk -DBUILD_DEMOS=OFF -DINSTALL_DEMOS=OFF -DBUILD_SHARED=OFF -DBUILD_STATIC=ON -DINSTALL_STATIC=ON -DCMAKE_INSTALL_PREFIX=.install
 	cmake --build .thirdparty/chipmunk
 	cmake --install .thirdparty/chipmunk
-	cmake -S thirdparty/clipper/cpp -GNinja -B.thirdparty/clipper -DCMAKE_INSTALL_PREFIX:PATH=.install
+	cmake -S thirdparty/clipper/cpp -GNinja -B.thirdparty/clipper -DCMAKE_INSTALL_PREFIX=.install
 	cmake --build .thirdparty/clipper
 	cmake --install .thirdparty/clipper
 
@@ -58,17 +58,20 @@ thirdparty-install: thirdparty-clone
 # -DBUILD_SHARED_LIBS=OFF
 
 clean:
-	$(RM) -rf .build .thirdparty .install
+	$(RM) -rf .build
 
-distclean: clean
+thirdparty-clean:
+	$(RM) -rf .thirdparty .install
+
+distclean: clean thirdparty-clean
 	$(RM) -rf thirdparty cocos-project
 
-.PHONY: all clean distclean configure thirdparty-clone thirdparty-install
+.PHONY: all clean distclean configure thirdparty-clone thirdparty-install thirdparty-clean
 
 
 .build: thirdparty-install | cocos-project
 	@echo target: $@
-	$(CMAKE) -S. -GNinja -B.build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX:PATH=.install
+	$(CMAKE) -S. -GNinja -B.build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=.install
 
 cocos-project:
 	@echo target: $@
